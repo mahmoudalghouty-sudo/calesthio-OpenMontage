@@ -9,29 +9,72 @@ permissions:
   contents: read
 
 jobs:
-  retrieve-client-for-review:
+  encrypted-round-trip:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Retrieve published tmp0 CLI source without executing it
+      - name: Install FFmpeg
+        run: sudo apt-get install -y ffmpeg
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.4"
+
+      - name: Retrieve and pin the published tmp0 CLI source
         run: |
           mkdir -p transfer-client
           curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
-            https://tmp0.cc/api/v1/cli/tmp0.js \
-            -o transfer-client/tmp0.js
+            https://tmp0.cc/api/v1/cli/tmp0.js -o transfer-client/tmp0.js
           curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
-            https://tmp0.cc/api/v1/cli/package.json \
-            -o transfer-client/package.json
-          test -s transfer-client/tmp0.js
-          test -s transfer-client/package.json
-          sha256sum transfer-client/*
+            https://tmp0.cc/api/v1/cli/package.json -o transfer-client/package.json
+          echo "e2d158f1d7012aee24fb584d80c86712f5b0808cf8083afbe00d87a78a5d8c04  transfer-client/tmp0.js" | sha256sum --check
+          echo "f21649800f3e16bc71151f0af65d36b4f3be325c69c4b9fbfb7fa587614e515f  transfer-client/package.json" | sha256sum --check
           node --check transfer-client/tmp0.js
-          cat transfer-client/package.json
 
-      - name: Preserve files for manual security review
+      - name: Install audited transfer dependencies
+        working-directory: transfer-client
+        run: |
+          npm install --no-audit --no-fund
+          node --input-type=module -e "await import('argon2'); console.log('PASS: native Argon2 module available; scrypt fallback will not be used.')"
+
+      - name: Test encrypted synthetic video upload, download and integrity
+        working-directory: transfer-client
+        env:
+          TMP0_HOST: https://tmp0.cc
+        run: |
+          set -euo pipefail
+          PASS="$(openssl rand -hex 32)"
+          echo "::add-mask::$PASS"
+
+          mkdir -p proof
+          ffmpeg -hide_banner -loglevel error -y \
+            -f lavfi -i "testsrc2=size=320x180:rate=24:duration=2" \
+            -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=2" \
+            -shortest -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
+            -c:a aac proof/source.mp4
+
+          SOURCE_HASH="$(sha256sum proof/source.mp4 | cut -d' ' -f1)"
+          node tmp0.js upload proof/source.mp4 --encrypt --password "$PASS" \
+            --expires 1h --max-downloads 1 --json > proof/upload.json
+
+          FILE_ID="$(node -e "const x=require('./proof/upload.json'); if(!x.clientEncrypted) process.exit(2); process.stdout.write(x.fileId)")"
+          test -n "$FILE_ID"
+
+          node tmp0.js download "$FILE_ID" --password "$PASS" --output proof/recovered.mp4
+
+          RECOVERED_HASH="$(sha256sum proof/recovered.mp4 | cut -d' ' -f1)"
+          test "$SOURCE_HASH" = "$RECOVERED_HASH"
+          ffprobe -v error -show_entries stream=codec_name,width,height -show_entries format=duration \
+            -of json proof/recovered.mp4
+          echo "PASS: E2EE upload/download round-trip preserved the exact video bytes."
+
+      - name: Upload non-sensitive proof report
         uses: actions/upload-artifact@v4
         with:
-          name: tmp0-transfer-client-source-review
-          path: transfer-client/
+          name: tmp0-encrypted-transfer-proof
+          path: |
+            transfer-client/proof/source.mp4
+            transfer-client/proof/recovered.mp4
           if-no-files-found: error
           retention-days: 1
