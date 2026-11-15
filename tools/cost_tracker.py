@@ -124,6 +124,14 @@ class CostTracker:
         self._require_status(entry, EntryStatus.ESTIMATED, "reserve")
         estimated = entry["estimated_usd"]
 
+        # In hard-cap mode, reject unaffordable operations before asking for
+        # approval. A user approval must never override a zero-cost hard cap.
+        if self.mode == BudgetMode.CAP and estimated > self.usable_budget_usd:
+            raise BudgetExceededError(
+                "Reservation exceeds usable budget "
+                f"(${estimated:.2f} > ${self.usable_budget_usd:.2f})"
+            )
+
         # Check single-action approval threshold
         if estimated > self.single_action_approval_usd:
             if self.mode != BudgetMode.OBSERVE:
