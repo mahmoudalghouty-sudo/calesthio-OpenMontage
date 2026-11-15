@@ -17,7 +17,7 @@ jobs:
   render:
     name: Render and verify a 1080p MP4 on GitHub-hosted CPU
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -69,6 +69,54 @@ jobs:
           assert float(data["format"]["duration"]) >= 3.5, data["format"]
           print("PASS: valid 1080p MP4 rendered on GitHub-hosted CPU.")
           PY
+
+      - name: Run repository FFmpeg smoke test
+        run: python scripts/smoke_ffmpeg_editing.py
+
+      - name: Set up Node.js for Remotion
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.4"
+          cache: npm
+          cache-dependency-path: remotion-composer/package-lock.json
+
+      - name: Install Remotion dependencies
+        working-directory: remotion-composer
+        run: npm ci --no-audit --no-fund
+
+      - name: Render one second through the actual OpenMontage Remotion composition
+        working-directory: remotion-composer
+        run: |
+          mkdir -p ../proof-output
+          npx remotion render src/index.tsx Explainer ../proof-output/openmontage-remotion-cloud-proof.mp4 --frames=0-29 --gl=swangle --concurrency=2
+
+      - name: Verify Remotion output
+        run: |
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,pix_fmt -of default=noprint_wrappers=1 proof-output/openmontage-remotion-cloud-proof.mp4
+          ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 proof-output/openmontage-remotion-cloud-proof.mp4
+          python - <<'PY'
+          import json
+          import subprocess
+
+          path = "proof-output/openmontage-remotion-cloud-proof.mp4"
+          data = json.loads(subprocess.check_output([
+              "ffprobe", "-v", "error", "-show_streams", "-show_format",
+              "-of", "json", path
+          ], text=True))
+          video = next(s for s in data["streams"] if s["codec_type"] == "video")
+          assert video["width"] == 1920, video
+          assert video["height"] == 1080, video
+          assert float(data["format"]["duration"]) >= 0.9, data["format"]
+          print("PASS: OpenMontage Remotion produced a valid 1080p MP4.")
+          PY
+
+      - name: Upload Remotion proof video
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmontage-remotion-cloud-proof
+          path: proof-output/openmontage-remotion-cloud-proof.mp4
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload proof video
         uses: actions/upload-artifact@v4
