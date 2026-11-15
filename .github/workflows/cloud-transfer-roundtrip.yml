@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Checkout OpenMontage
+        uses: actions/checkout@v4
+
       - name: Install FFmpeg
         run: sudo apt-get install -y ffmpeg
 
@@ -88,6 +91,40 @@ jobs:
             -of json proof/recovered.mp4
           echo "PASS: E2EE upload/download round-trip preserved the exact video bytes."
 
+          python -m pip install --disable-pip-version-check python-dotenv
+          python - <<'PY'
+          from lib.env_loader import load_env
+          load_env()
+          from tools.video.video_compose import VideoCompose
+          tool = VideoCompose()
+          result = tool.execute({
+              "operation": "encode",
+              "input_path": "transfer-client/proof/recovered.mp4",
+              "output_path": "transfer-client/proof/final-reels.mp4",
+              "profile": "instagram_reels",
+              "crf": 23,
+              "preset": "ultrafast",
+          })
+          if not result.success:
+              raise SystemExit(f"VideoCompose failed: {result.error}")
+          print("PASS: OpenMontage VideoCompose processed the recovered source.")
+          PY
+
+          python - <<'PY'
+          import json, subprocess
+          path = "transfer-client/proof/final-reels.mp4"
+          data = json.loads(subprocess.check_output([
+              "ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", path
+          ], text=True))
+          video = next(s for s in data["streams"] if s["codec_type"] == "video")
+          audio = next((s for s in data["streams"] if s["codec_type"] == "audio"), None)
+          assert (video["width"], video["height"]) == (1080, 1920), video
+          assert video["codec_name"] == "h264", video
+          assert audio and audio["codec_name"] == "aac", audio
+          assert float(data["format"]["duration"]) >= 1.9, data["format"]
+          print("PASS: final vertical 1080x1920 H.264/AAC MP4 verified.")
+          PY
+
       - name: Upload non-sensitive proof videos
         uses: actions/upload-artifact@v4
         with:
@@ -95,5 +132,6 @@ jobs:
           path: |
             transfer-client/proof/source.mp4
             transfer-client/proof/recovered.mp4
+            transfer-client/proof/final-reels.mp4
           if-no-files-found: error
           retention-days: 1
