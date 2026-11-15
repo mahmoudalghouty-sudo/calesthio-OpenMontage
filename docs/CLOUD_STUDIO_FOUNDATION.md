@@ -48,35 +48,41 @@ Use a small, private, CPU-first deployment. AI image/video generation remains pr
 - **Secrets:** store provider keys only in the hosting platform's secret manager/environment settings. Never commit `.env`, API keys, tokens, or signed URLs.
 - **Observability:** capture job ID, project ID, stage, provider/model, estimated and settled cost, duration, retries, and failure reason. Do not log secrets or raw credentials.
 
-## 4. Deployment decision
+## 4. Deployment decision — strict $0/month architecture
 
-The codebase currently has a local Backlot board, not a complete authenticated multi-user cloud SaaS. Cloud deployment must therefore be private and single-owner first.
+The user has explicitly set a hard maximum of USD $0/month and prohibited paid activation without approval. Treat this as a hard budget cap, not a target with overages allowed.
 
-Recommended deployment shape:
-- one private application/runtime service for OpenMontage + Backlot;
-- durable project volume for checkpoints and working files;
-- private object storage for media and final renders;
-- optional separate worker/GPU service later.
+### Approved zero-cost architecture (design only; no accounts/services provisioned)
 
-Budget decision: hard ceiling USD $10/month, with a target operating cost of $0/month during the prototype. Do not create or activate paid resources without a separate explicit approval.
+- **Static control panel:** Cloudflare Pages Free. Host only the phone-friendly studio dashboard/static frontend. Pages Free currently permits 500 builds/month, 20,000 files/site, and 25 MiB per asset. Keep all media out of Pages assets.
+- **Small control/API layer:** Cloudflare Workers Free, only for lightweight authenticated project metadata and signed upload/download coordination. Current Free limits include 100,000 requests/day and 10 ms CPU time per invocation. This is not a video-rendering runtime.
+- **Metadata database:** Cloudflare D1 Free for project state, approvals, stage status, and small audit metadata. Keep large files out of D1. Confirm current D1 free limits at account setup.
+- **Media object storage:** Cloudflare R2 Standard Free allowance: 10 GB-month storage, 1 million Class A operations/month, 10 million Class B operations/month, and no egress charge. Enforce an application-level storage quota below 10 GB (recommended 8 GB) and refuse uploads when near quota. R2 is usage-billed beyond the allowance, so do not enable it unless the dashboard can monitor usage and the account can enforce/alert on limits. No public bucket.
+- **Source of truth / code:** existing GitHub repository and pull requests. Keep video binaries and generated assets out of Git.
+- **Build/test automation:** GitHub Actions only for small lint/contract tests and deployment of static assets. GitHub Free includes limited private-repo compute/storage; never assume unlimited free minutes. Do not run FFmpeg or AI generation in Actions by default.
+- **Agent / orchestration:** Claude Code remains the director and calls the existing OpenMontage tools where available. It is not an always-on free cloud daemon; the user starts a production session and approves each gate.
+- **Rendering:** No guaranteed always-on cloud renderer is available under the $0 cap. First release supports project planning, approvals, asset management, and review UI in the cloud. Actual FFmpeg/Remotion rendering must run on a user-controlled computer/device or on a temporary free compute allowance only after verifying its limits. Do not claim fully cloud-rendered production until a free render worker is proven.
+- **AI media providers:** disabled by default. Use only local/free-tier models or explicitly approved providers with a confirmed $0 price. Never call a metered endpoint on the assumption it is free.
+- **Authentication:** use Cloudflare Access only if the chosen account's current free allowance covers the intended single-user setup; otherwise implement a reviewed single-owner authentication layer using Workers/D1. Do not publish Backlot or media unauthenticated.
+- **No paid fallback:** no automatic upgrade, no card-backed overage, no paid GPU, no Render paid service, no Modal, no paid database, and no paid custom domain.
 
-Selected zero-cost-first architecture:
-- **Dashboard:** Cloudflare Pages static assets (Free).
-- **Control API:** Cloudflare Workers Free, limited to authentication/session checks, project metadata, approval state, and dispatching jobs. Never run FFmpeg, Python video rendering, or AI inference inside a Worker.
-- **Media storage:** Cloudflare R2 Standard private bucket, staying within the 10 GB-month and request free allowances.
-- **Render execution:** GitHub Actions on the repository's included monthly minutes. Actions workers run bounded CPU jobs, use FFmpeg/Remotion where supported, and upload outputs to private R2. No always-on VM and no GPU.
-- **Project metadata:** versioned JSON/checkpoint files in the repository for the initial prototype; move mutable metadata to a durable store only if required and after reviewing free-tier constraints.
-- **Approval:** Claude Code remains the authoritative approval interface. A stage cannot advance until the user explicitly approves that stage. The dashboard may display status, but must not silently approve.
-- **Private access:** Cloudflare Access or an equivalent reviewed single-owner authentication layer in front of the dashboard and API. Verify current free eligibility and exact setup before enabling public DNS.
+### Cost guardrails
 
-Important limits:
-- Workers Free has a 10 ms CPU limit per invocation and is only the lightweight control plane.
-- GitHub Actions Free for private repositories includes 2,000 minutes/month; monitor usage and stop jobs before the quota is exhausted.
-- R2 Free includes 10 GB-month Standard storage, 1 million Class A and 10 million Class B operations, with no egress fees.
-- This stack can host the control plane and run limited CPU render jobs. It cannot promise always-on rendering, heavy AI inference, or GPU video generation at $0.
-- If GitHub Actions minutes, R2 usage, or any other quota would exceed the free allowance, pause and request approval; never allow automatic overage.
+1. The deployment must remain on free plans and must not activate paid plans.
+2. Set provider/account spending limits to $0 where supported; disable automatic paid upgrades and usage overages.
+3. If a service requires a payment method or cannot guarantee a hard $0 cap, pause and ask the user before connecting it.
+4. Display an estimated cost before every AI generation, upload, or render operation. If the cost is unknown, block the operation.
+5. Keep R2 usage under 8 GB and monitor operations; stop uploads before exceeding free allowances.
+6. Never store user videos permanently by default. Offer cleanup/export and retention controls.
+7. No paid service, account, bucket, domain, worker, GPU, or deployment has been created by this plan.
 
-No paid cloud resources, subscriptions, Workers Paid plan, GPU instances, or paid generation providers are authorized by this decision.
+### Free-tier limitations (must be explicit in the UI)
+
+- Cloudflare Workers Free's 10 ms CPU limit is for lightweight API requests, not video encoding or AI inference.
+- R2's free tier is capped; usage beyond included amounts can be billed.
+- GitHub Actions private-repository minutes/storage are limited.
+- Static hosting does not provide a persistent Python process, durable FFmpeg worker, or unlimited storage.
+- Free AI endpoints may have queues, rate limits, model changes, or no commercial-use rights.
 
 ## 5. Implementation phases and acceptance criteria
 
