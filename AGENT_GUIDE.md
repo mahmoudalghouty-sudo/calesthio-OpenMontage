@@ -765,7 +765,7 @@ When the user wants to render from an Android phone through the isolated GitHub-
 
 - Use only branch `cloud-transfer-roundtrip`; never merge to `main` unless the user explicitly authorizes it.
 - Never commit source videos, decrypted media, passwords, encryption keys, or private assets. The repository is public.
-- The user uploads the source to tmp0.cc with client-side E2EE and gives the agent only the file ID. The password must already exist as the GitHub Actions secret `TMP0_E2EE_PASSWORD`; never ask the user to paste it into the chat or request JSON.
+- The user renames the source to a neutral filename (tmp0 keeps the filename readable), uploads it to tmp0.cc with client-side E2EE, and gives the agent only the file ID. The password must already exist as the GitHub Actions secret `TMP0_E2EE_PASSWORD`; never ask the user to paste it into the chat or request JSON.
 - Create/update only `jobs/requests/next.json` with the file ID and non-sensitive edit instructions, then commit/push that file to `cloud-transfer-roundtrip`.
 - Monitor the **Phone Video Production** workflow to completion. Return its encrypted result link from the run summary; the user decrypts it in the browser with their own password.
 - Real media must never be uploaded as GitHub artifacts. Artifacts are permitted only for synthetic tests.
