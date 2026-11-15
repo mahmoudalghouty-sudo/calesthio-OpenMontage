@@ -162,7 +162,7 @@ stages:
       - svg_rig_builder
       - pose_library_builder
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Parts, pivots, layers, constraints, views, and required poses are complete
       - Rig plan avoids per-character code paths; character differences are data
@@ -238,7 +238,7 @@ stages:
     tools_available:
       - action_timeline_compiler
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Action timeline preserves acting beats and emotional readability
       - Pose transitions are timed with holds, anticipation, and follow-through
@@ -268,7 +268,7 @@ stages:
       - video_compose
       - audio_mixer
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Runtime chosen in proposal is the runtime actually used
       - Browser preview passes Playwright/screenshot checks where available
