@@ -72,6 +72,14 @@ jobs:
       - name: Run repository FFmpeg smoke test
         run: python scripts/smoke_ffmpeg_editing.py
 
+      - name: Exercise the OpenMontage VideoCompose tool with synthetic media
+        run: |
+          python tests/qa/test_05_video_compose.py
+          for file in compose_basic.mp4 compose_subtitled.mp4 compose_burn_subs.mp4 compose_encoded.mp4 compose_overlay.mp4; do
+            test -s "tests/qa/output/$file"
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of csv=p=0 "tests/qa/output/$file"
+          done
+
       - name: Set up Node.js for Remotion
         uses: actions/setup-node@v4
         with:
