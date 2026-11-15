@@ -166,8 +166,11 @@ def main() -> None:
     expected_duration = sum((c["out_seconds"] - c["in_seconds"]) / c["speed"] for c in cuts)
     if abs(output_duration - expected_duration) > 0.75:
         fail(f"unexpected render duration: {output_duration:.2f}s; expected about {expected_duration:.2f}s")
-    if output.stat().st_size > 524288000:
-        fail("render output exceeds the 500 MB safe upload limit")
+    if profile.max_duration_seconds and output_duration > profile.max_duration_seconds:
+        fail(f"output exceeds {profile_name} duration limit of {profile.max_duration_seconds}s")
+    max_size_mb = min(profile.max_file_size_mb or 500, 500)
+    if output.stat().st_size > max_size_mb * 1024 * 1024:
+        fail(f"render output exceeds the {max_size_mb:g} MB safe limit")
 
     report = {
         "project_id": project_id,
