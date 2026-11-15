@@ -61,6 +61,12 @@ The CI job now sets `OPENMONTAGE_PROFILE=editing_only` and listens for pushes to
 
 Limitations: the guard relies on accurate tool metadata. It is not a complete sandbox against arbitrary network calls hidden inside tools marked local and not marked network-dependent. Continue auditing network-capable source tools and subprocess calls. In particular, tools that download or fetch remote content must be blocked by their declared network requirement or explicit input validation.
 
+## FFmpeg smoke test added
+
+A test-only script now lives at `scripts/smoke_ffmpeg_editing.py`. It creates a one-second synthetic local fixture with FFmpeg, runs a second FFmpeg pass to simulate a simple edit/export, and validates the output container and duration with FFprobe. It uses no user media, remote downloads, AI generation, or paid endpoints.
+
+The CI workflow invokes this smoke test after installing FFmpeg. The workflow also runs with `OPENMONTAGE_PROFILE=editing_only`.
+
 ## Recommended implementation sequence
 
 1. Continue tracing all network-capable tools and verify the execution guard covers their metadata and URL inputs.
@@ -76,6 +82,6 @@ Limitations: the guard relies on accurate tool metadata. It is not a complete sa
 - All 13 shipped pipeline manifests had previously been audited for human approval gates.
 - Zero-cost configuration and regression test committed to the feature branch.
 - GitHub Actions workflow runs: none found after the latest commits; CI has not yet been observed running.
-- Python test suite: not executed in this environment; focused tests are committed but not yet proven passing.
+- Python test suite and FFmpeg smoke script: committed to the branch but not executed in this environment; passing status is unverified.
 - Cloud resources: none created.
 - Paid services, API keys, and payment methods: none added.
