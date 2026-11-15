@@ -1,0 +1,187 @@
+name: Phone Video Production
+
+on:
+  push:
+    branches:
+      - cloud-transfer-roundtrip
+    paths:
+      - jobs/requests/next.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phone-video-production
+  cancel-in-progress: false
+
+jobs:
+  render:
+    name: Decrypt, edit, render, and return an encrypted MP4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TMP0_E2EE_PASSWORD: ${{ secrets.TMP0_E2EE_PASSWORD }}
+      OPENMONTAGE_PROFILE: editing_only
+
+    steps:
+      - name: Checkout OpenMontage
+        uses: actions/checkout@v4
+
+      - name: Validate the job request
+        id: request
+        run: |
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          path = Path("jobs/requests/next.json")
+          if not path.is_file():
+              raise SystemExit("Request file not found")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          test_mode = data.get("test_mode") is True
+          project_id = str(data.get("project_id", "phone-video"))
+          if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,47}", project_id):
+              raise SystemExit("Invalid project_id")
+          profile = str(data.get("output_profile", "instagram_reels"))
+          if profile not in {"instagram_reels", "instagram_feed", "youtube_shorts", "youtube_landscape", "tiktok"}:
+              raise SystemExit("Unsupported output_profile")
+          file_id = str(data.get("file_id", ""))
+          if not test_mode and not re.fullmatch(r"[A-Za-z0-9_-]{6,160}", file_id):
+              raise SystemExit("A valid tmp0 file_id is required")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"test_mode={'true' if test_mode else 'false'}\n")
+              out.write(f"project_id={project_id}\n")
+              out.write(f"profile={profile}\n")
+              out.write(f"file_id={file_id}\n")
+          print(f"Request accepted: test_mode={test_mode}, project_id={project_id}, profile={profile}")
+          PY
+
+      - name: Install FFmpeg and Python dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --disable-pip-version-check python-dotenv
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.4"
+
+      - name: Retrieve and pin the published tmp0 CLI source
+        run: |
+          mkdir -p transfer-client
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 https://tmp0.cc/api/v1/cli/tmp0.js -o transfer-client/tmp0.js
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 https://tmp0.cc/api/v1/cli/package.json -o transfer-client/package.json
+          echo "e2d158f1d7012aee24fb584d80c86712f5b0808cf8083afbe00d87a78a5d8c04  transfer-client/tmp0.js" | sha256sum --check
+          echo "f21649800f3e16bc71151f0af65d36b4f3be325c69c4b9fbfb7fa587614e515f  transfer-client/package.json" | sha256sum --check
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("transfer-client/tmp0.js")
+          source = path.read_text()
+          old = "console.error(chalk.yellow('Warning: argon2 native module not found, using scrypt fallback'));"
+          new = "throw new Error('Argon2id unavailable; refusing incompatible scrypt fallback');"
+          assert old in source, "Expected fallback guard not found"
+          source = source.replace(old, new, 1)
+          upload_end = "        }\n\n    } catch (error) {\n        spinner.fail('Upload failed');"
+          download_end = "        }\n\n    } catch (error) {\n        spinner.fail('Download failed');"
+          assert upload_end in source and download_end in source, "CLI completion anchors changed"
+          source = source.replace(upload_end, "        }\n        process.exit(0);\n\n    } catch (error) {\n        spinner.fail('Upload failed');", 1)
+          source = source.replace(download_end, "        }\n        process.exit(0);\n\n    } catch (error) {\n        spinner.fail('Download failed');", 1)
+          path.write_text(source)
+          PY
+          node --check transfer-client/tmp0.js
+
+      - name: Install audited transfer dependencies
+        working-directory: transfer-client
+        run: |
+          npm install --no-audit --no-fund
+          node --input-type=module -e "await import('argon2'); console.log('PASS: native Argon2id available')"
+
+      - name: Prepare the source video
+        env:
+          FILE_ID: ${{ steps.request.outputs.file_id }}
+          TEST_MODE: ${{ steps.request.outputs.test_mode }}
+          PROJECT_ID: ${{ steps.request.outputs.project_id }}
+        run: |
+          set -euo pipefail
+          PASS="$TMP0_E2EE_PASSWORD"
+          if [ "$TEST_MODE" = "true" ]; then
+            PASS="$(openssl rand -hex 32)"
+            mkdir -p "projects/$PROJECT_ID/assets"
+            ffmpeg -hide_banner -loglevel error -y \
+              -f lavfi -i "testsrc2=size=640x360:rate=24:duration=5" \
+              -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=5" \
+              -shortest -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
+              -c:a aac "projects/$PROJECT_ID/assets/source.mp4"
+            echo "Synthetic test source created."
+          else
+            if [ -z "$PASS" ]; then
+              echo "::error::Add TMP0_E2EE_PASSWORD in repository Settings > Secrets and variables > Actions."
+              exit 1
+            fi
+            echo "::add-mask::$PASS"
+            curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o transfer-client/source-info.json
+            node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Source is not client-encrypted');"
+            mkdir -p "projects/$PROJECT_ID/assets"
+            timeout 300s node transfer-client/tmp0.js download "$FILE_ID" --password "$PASS" --output "projects/$PROJECT_ID/assets/source.mp4"
+            SIZE="$(stat -c%s "projects/$PROJECT_ID/assets/source.mp4")"
+            if [ "$SIZE" -gt 524288000 ]; then
+              echo "::error::Source exceeds the 500 MB safe limit for this first cloud workflow."
+              exit 1
+            fi
+          fi
+          echo "::add-mask::$PASS"
+          echo "TMP0_E2EE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+          echo "CLOUD_VIDEO_INPUT=$GITHUB_WORKSPACE/projects/$PROJECT_ID/assets/source.mp4" >> "$GITHUB_ENV"
+          echo "CLOUD_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          echo "CLOUD_TEST_MODE=$TEST_MODE" >> "$GITHUB_ENV"
+
+      - name: Render with OpenMontage VideoCompose
+        env:
+          OPENMONTAGE_PROFILE: editing_only
+        run: |
+          python scripts/cloud_video_job.py
+          test -s "projects/${{ steps.request.outputs.project_id }}/renders/final.mp4"
+          ffprobe -v error -show_entries stream=codec_name,width,height -show_entries format=duration \
+            -of json "projects/${{ steps.request.outputs.project_id }}/renders/final.mp4"
+
+      - name: Encrypt and upload the finished video
+        id: output
+        run: |
+          set -euo pipefail
+          OUTPUT="projects/${{ steps.request.outputs.project_id }}/renders/final.mp4"
+          timeout 300s node transfer-client/tmp0.js upload "$OUTPUT" --encrypt --password "$TMP0_E2EE_PASSWORD" \
+            --expires 24h --max-downloads 3 --json > transfer-client/output.json
+          FILE_ID="$(node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/output.json','utf8')); if(!x.fileId) throw new Error('Missing output file ID'); process.stdout.write(x.fileId)")"
+          URL="$(node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/output.json','utf8')); if(!x.fullUrl) throw new Error('Missing output URL'); process.stdout.write(x.fullUrl)")"
+          curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o transfer-client/output-info.json
+          node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/output-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Output was not client-encrypted');"
+          echo "download_url=$URL" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Your encrypted video is ready"
+            echo
+            echo "[Open the encrypted download]($URL)"
+            echo
+            echo "The link expires in 24 hours. Use the same password you used for the source upload."
+            echo "The video was encrypted before it left the temporary runner."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify encrypted output round-trip (synthetic test only)
+        if: steps.request.outputs.test_mode == 'true'
+        run: |
+          set -euo pipefail
+          OUTPUT="projects/${{ steps.request.outputs.project_id }}/renders/final.mp4"
+          EXPECTED="$(sha256sum "$OUTPUT" | cut -d' ' -f1)"
+          FILE_ID="$(node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/output.json','utf8')); process.stdout.write(x.fileId)")"
+          timeout 300s node transfer-client/tmp0.js download "$FILE_ID" --password "$TMP0_E2EE_PASSWORD" --output transfer-client/final-roundtrip.mp4
+          ACTUAL="$(sha256sum transfer-client/final-roundtrip.mp4 | cut -d' ' -f1)"
+          test "$EXPECTED" = "$ACTUAL"
+          echo "PASS: rendered output survived E2EE upload/download with exact SHA-256 match."
+
+      - name: Upload synthetic render proof only
+        if: steps.request.outputs.test_mode == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmontage-phone-video-production-proof
+          path: projects/${{ steps.request.outputs.project_id }}/renders/final.mp4
+          if-no-files-found: error
+          retention-days: 1
