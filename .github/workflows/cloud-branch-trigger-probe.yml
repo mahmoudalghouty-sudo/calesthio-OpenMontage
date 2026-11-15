@@ -1,0 +1,20 @@
+name: Cloud Branch Workflow Trigger Probe
+
+on:
+  push:
+    branches:
+      - cloud-transfer-roundtrip
+    paths:
+      - jobs/requests/next.json
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Confirm branch workflow trigger
+        run: |
+          echo "PASS: branch-scoped push workflow executed."
+          cat jobs/requests/next.json
