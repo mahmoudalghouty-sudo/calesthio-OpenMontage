@@ -70,7 +70,7 @@ The first cloud path supports cuts, subtitle burn-in, and output formatting. It 
 
 ## Synthetic test
 
-The checked-in request used for validation has `"test_mode": true`. It creates synthetic media on the runner, renders a vertical MP4 through OpenMontage, uploads the result encrypted, downloads it again, and compares exact SHA-256 hashes. It does not require the password secret and does not use personal media.
+The checked-in request used for validation has `"test_mode": "e2ee_input"`. It creates synthetic media, encrypts and uploads it to tmp0.cc, downloads and decrypts it on the runner, renders a vertical MP4 through OpenMontage, encrypts and uploads the result, downloads it again, and compares exact SHA-256 hashes. It does not require the password secret and does not use personal media.
 
 Before switching to a real file, the synthetic production workflow must pass. The initial source-transfer proof is separate and also must pass.
 
