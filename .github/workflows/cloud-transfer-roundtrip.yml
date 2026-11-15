@@ -38,7 +38,14 @@ jobs:
           old = "console.error(chalk.yellow('Warning: argon2 native module not found, using scrypt fallback'));"
           new = "throw new Error('Argon2id unavailable; refusing incompatible scrypt fallback');"
           assert old in source, "Expected fallback guard not found; stop rather than run unreviewed code"
-          path.write_text(source.replace(old, new, 1))
+          source = source.replace(old, new, 1)
+          upload_end = "        }\n\n    } catch (error) {\n        spinner.fail('Upload failed');"
+          download_end = "        }\n\n    } catch (error) {\n        spinner.fail('Download failed');"
+          assert upload_end in source, "Upload completion anchor missing"
+          assert download_end in source, "Download completion anchor missing"
+          source = source.replace(upload_end, "        }\n        process.exit(0);\n\n    } catch (error) {\n        spinner.fail('Upload failed');", 1)
+          source = source.replace(download_end, "        }\n        process.exit(0);\n\n    } catch (error) {\n        spinner.fail('Download failed');", 1)
+          path.write_text(source)
           PY
           node --check transfer-client/tmp0.js
 
