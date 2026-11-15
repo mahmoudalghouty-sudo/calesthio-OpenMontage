@@ -1,5 +1,5 @@
 {
-  "test_mode": true,
+  "test_mode": "e2ee_input",
   "project_id": "synthetic-cloud-proof",
   "test_revision": 2,
   "output_profile": "instagram_reels",
