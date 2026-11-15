@@ -94,6 +94,7 @@ class TestGateEnforcement:
             "completed",
             {"research_brief": sample_artifact("research_brief")},
             pipeline_type="cinematic",
+            human_approved=True,
         )
 
         approved_proposal = sample_artifact("proposal_packet")
