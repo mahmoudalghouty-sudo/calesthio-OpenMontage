@@ -83,11 +83,11 @@ jobs:
         working-directory: remotion-composer
         run: npm ci --no-audit --no-fund
 
-      - name: Render one second through the actual OpenMontage Remotion composition
+      - name: Render a visible OpenMontage HeroTitle composition through Remotion
         working-directory: remotion-composer
         run: |
           mkdir -p ../proof-output
-          npx remotion render src/index.tsx Explainer ../proof-output/openmontage-remotion-cloud-proof.mp4 --frames=0-29 --gl=swangle --concurrency=2
+          npx remotion render src/index.tsx HeroTitle ../proof-output/openmontage-remotion-cloud-proof.mp4 --frames=0-89 --gl=swangle --concurrency=2
 
       - name: Verify Remotion output
         run: |
@@ -105,8 +105,17 @@ jobs:
           video = next(s for s in data["streams"] if s["codec_type"] == "video")
           assert video["width"] == 1920, video
           assert video["height"] == 1080, video
-          assert float(data["format"]["duration"]) >= 0.9, data["format"]
-          print("PASS: OpenMontage Remotion produced a valid 1080p MP4.")
+          assert float(data["format"]["duration"]) >= 2.9, data["format"]
+          frame = subprocess.check_output([
+              "ffmpeg", "-v", "error", "-ss", "2", "-i", path,
+              "-frames:v", "1", "-f", "image2pipe", "-vcodec", "png", "-"
+          ])
+          import io
+          from PIL import Image
+          import numpy as np
+          pixels = np.asarray(Image.open(io.BytesIO(frame)).convert("RGB"))
+          assert pixels.std() > 15, float(pixels.std())
+          print("PASS: visible OpenMontage HeroTitle rendered to 1080p MP4.")
           PY
 
       - name: Upload Remotion proof video
