@@ -131,7 +131,6 @@ jobs:
 
       - name: Run the real OpenMontage HyperFrames end-to-end render
         env:
-          OPENMONTAGE_PROFILE: editing_only
           HYPERFRAMES_QA: "1"
           HYPERFRAMES_QA_RENDER: "1"
           HYPERFRAMES_QA_OUTPUT: ${{ github.workspace }}/proof-output/openmontage-hyperframes-cloud-proof.mp4
