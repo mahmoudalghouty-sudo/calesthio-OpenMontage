@@ -319,6 +319,7 @@ def test_completed_proposal_checkpoint_rejects_pending_approval(tmp_path):
         "completed",
         {"research_brief": sample_artifact("research_brief")},
         pipeline_type="cinematic",
+        human_approved=True,
     )
 
     pending_proposal = sample_artifact("proposal_packet")
