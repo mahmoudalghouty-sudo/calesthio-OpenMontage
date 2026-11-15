@@ -117,6 +117,40 @@ jobs:
           print(f"PASS: visible OpenMontage HeroTitle rendered to 1080p MP4 (luma range {ymin}-{ymax}).")
           PY
 
+      - name: Set up Python for HyperFrames
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install OpenMontage Python test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
+
+      - name: Run the real OpenMontage HyperFrames end-to-end render
+        env:
+          OPENMONTAGE_PROFILE: editing_only
+          HYPERFRAMES_QA: "1"
+          HYPERFRAMES_QA_RENDER: "1"
+          HYPERFRAMES_QA_OUTPUT: ${{ github.workspace }}/proof-output/openmontage-hyperframes-cloud-proof.mp4
+        run: python -m pytest tests/qa/test_09_hyperframes_compose.py -q
+
+      - name: Verify HyperFrames output
+        run: |
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 proof-output/openmontage-hyperframes-cloud-proof.mp4
+          ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 proof-output/openmontage-hyperframes-cloud-proof.mp4
+          test -s proof-output/openmontage-hyperframes-cloud-proof.mp4
+
+      - name: Upload HyperFrames proof video
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmontage-hyperframes-cloud-proof
+          path: proof-output/openmontage-hyperframes-cloud-proof.mp4
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Upload Remotion proof video
         uses: actions/upload-artifact@v4
         with:
