@@ -31,7 +31,7 @@ GitHub Actions reads the secret only at runtime. It is not placed in the reposit
 2. Select the source video.
 3. Rename the video to a neutral filename such as `source.mp4` first; tmp0 stores the filename as readable metadata even when the video contents are encrypted.
 4. Enable password/client-side encryption and enter the exact password stored in `TMP0_E2EE_PASSWORD`. The website and CLI use the same Argon2id + AES-256-GCM format.
-5. Set source expiry to one hour, then upload.
+5. Set source expiry to one day and, if offered, allow three downloads; this gives the cloud job time to start and leaves room for a retry.
 6. Copy the file ID shown by the service. The file ID is not the password; without the password, the ciphertext cannot be decrypted.
 
 Do not use a normal, unencrypted upload. Do not upload any personal video until the synthetic production test has passed.
