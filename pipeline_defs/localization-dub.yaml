@@ -145,7 +145,7 @@ stages:
       - edit_decisions
     tools_available: []
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Source structure is preserved unless localization timing forces change
       - CTA and legal copy survive translation cleanly
@@ -176,7 +176,7 @@ stages:
       - video_trimmer
       - audio_enhance
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Each language output is intelligible and correctly timed
       - Subtitle and dub timing match the chosen treatment
