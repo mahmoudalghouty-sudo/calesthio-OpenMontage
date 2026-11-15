@@ -46,6 +46,17 @@ This is a first-class workflow in OpenMontage.
 
 If a model misses this distinction, it will often fall back to plain search + guesswork. That is incorrect for OpenMontage.
 
+## Zero-Cost Editing-Only Studio Profile
+
+For this user's configured studio workflow, run local editing and analysis with user-supplied media only.
+
+- Set `OPENMONTAGE_PROFILE=editing_only` for every execution session and CI job.
+- This profile blocks tools in GENERATE/PUBLISH tiers, API/HYBRID/LOCAL_GPU runtimes, tools marked as requiring network, and remote URL input to `video_analyzer`.
+- Use local source files with FFmpeg, Remotion, HyperFrames, local scene detection, and local audio inspection.
+- Do not invoke image/video/music generation providers, paid TTS, publishing integrations, remote downloaders, or any metered endpoint.
+- If a required operation is blocked or cannot be completed locally, stop and explain the limitation; never silently fall back to a provider or paid service.
+- The profile guard is a safety layer, not proof that every possible network side effect in the repository has been audited. Continue auditing tools that spawn subprocesses or call network libraries.
+
 ## Rule Zero — All Production Goes Through a Pipeline
 
 **Every video production request MUST go through the pipeline system. No exceptions.**
