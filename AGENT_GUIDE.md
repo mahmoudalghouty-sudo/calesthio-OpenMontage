@@ -758,3 +758,17 @@ For this user's approved narration profile, use **English only, British English,
 - Store engine/version, voice ID, language, rate, script hash, sample rate, duration, and output path with each narration asset.
 - The design and audition harness are documented in `docs/TTS_BRITISH_MALE_DESIGN.md` and `scripts/test_kokoro_british_male_tts.py`.
 - **Status remains designed, not runtime-tested** until the harness is run on the actual execution host, all four samples pass WAV validation, offline synthesis is verified, and the user listens and selects a voice.
+
+## Phone-to-Cloud Production Handoff
+
+When the user wants to render from an Android phone through the isolated GitHub-hosted runner, read `CLOUD_VIDEO_PRODUCTION.md` before acting.
+
+- Use only branch `cloud-transfer-roundtrip`; never merge to `main` unless the user explicitly authorizes it.
+- Never commit source videos, decrypted media, passwords, encryption keys, or private assets. The repository is public.
+- The user uploads the source to tmp0.cc with client-side E2EE and gives the agent only the file ID. The password must already exist as the GitHub Actions secret `TMP0_E2EE_PASSWORD`; never ask the user to paste it into the chat or request JSON.
+- Create/update only `jobs/requests/next.json` with the file ID and non-sensitive edit instructions, then commit/push that file to `cloud-transfer-roundtrip`.
+- Monitor the **Phone Video Production** workflow to completion. Return its encrypted result link from the run summary; the user decrypts it in the browser with their own password.
+- Real media must never be uploaded as GitHub artifacts. Artifacts are permitted only for synthetic tests.
+- Keep `OPENMONTAGE_PROFILE=editing_only`. Do not invoke paid providers, generation APIs, or publishing integrations.
+- If the secret is missing, the source is not client-encrypted, or any validation fails, stop and report the blocker. Do not request a real source video as a test.
+- The first cloud path currently supports cuts, optional SRT subtitles, and platform formatting. Deep second-by-second marketing analysis, competitor research, and the full studio UI remain unfinished and must not be claimed as available.
