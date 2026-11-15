@@ -111,9 +111,8 @@ jobs:
               "-vf", "signalstats,metadata=print", "-frames:v", "1",
               "-f", "null", "-"
           ], text=True, stderr=subprocess.STDOUT)
-          import re
-          ymin = int(re.search(r"lavfi.signalstats.YMIN=(\\d+)", stats).group(1))
-          ymax = int(re.search(r"lavfi.signalstats.YMAX=(\\d+)", stats).group(1))
+          ymin = int(next(line.rsplit("=", 1)[1] for line in stats.splitlines() if "lavfi.signalstats.YMIN=" in line))
+          ymax = int(next(line.rsplit("=", 1)[1] for line in stats.splitlines() if "lavfi.signalstats.YMAX=" in line))
           assert ymax - ymin > 60, (ymin, ymax)
           print(f"PASS: visible OpenMontage HeroTitle rendered to 1080p MP4 (luma range {ymin}-{ymax}).")
           PY
