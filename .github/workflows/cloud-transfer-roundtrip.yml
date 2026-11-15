@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - cloud-transfer-roundtrip
+    paths:
+      - .github/workflows/cloud-transfer-roundtrip.yml
 
 permissions:
   contents: read
