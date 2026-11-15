@@ -31,13 +31,13 @@ Approval gates to preserve and verify across every enabled pipeline:
 6. final composition / QA result;
 7. publish/export action.
 
-A prior approval never authorizes a later gate. Paid generation must show provider, model, estimated cost, and sample/batch scope before execution. Never silently change a provider, model family, render runtime, or creative direction. Keep the existing append-only decision log and checkpoint history.
+A prior approval never authorizes a later gate. Paid generation is disabled and out of scope. Any future change requires a separate explicit user decision before enabling a provider. Never silently change a provider, model family, render runtime, or creative direction. Keep the existing append-only decision log and checkpoint history.
 
 Important implementation note: the checkpoint protocol treats each pipeline manifest's `human_approval_default` as binding. Do not assume the global `checkpoint.policy` setting overrides a manifest. Before enabling cloud production, audit all pipeline manifests and add tests proving the gates above are enforced.
 
 ## 3. Cloud architecture (first release)
 
-Use a small, private, CPU-first deployment. AI image/video generation remains provider-API based at first; do not rent an always-on GPU. Add a GPU worker only after a real workload justifies its cost.
+Use a small, private, CPU-first deployment. AI image/video generation is out of scope for this studio. Do not configure provider APIs or rent a GPU for video generation.
 
 - **Control / agent:** Claude Code remains the human-facing production director. It reads this repository, follows the existing pipeline manifests and skills, and asks for approval in the user's conversation.
 - **Execution runtime:** a Linux container with the repository, supported Python version, Node.js version from `.node-version`, FFmpeg, and Remotion/HyperFrames dependencies. It runs the existing tools and render commands; it does not invent a second orchestration engine.
@@ -127,7 +127,7 @@ Acceptance: private mobile access works; no unauthenticated access to projects, 
 
 ### Phase 5 — production reliability
 - Add a durable queue only if needed, retry/backoff rules, job cancellation, and idempotency.
-- Add cost preflight and hard budget caps before enabling paid generation.
+- Keep paid generation disabled. Preserve the hard zero-dollar budget guard for any future separately approved operation.
 - Add backups and a documented restore test.
 
 Acceptance: interrupted jobs can resume without duplicate paid submissions; restore test succeeds.
@@ -144,4 +144,4 @@ Acceptance: interrupted jobs can resume without duplicate paid submissions; rest
 
 ## 7. Immediate next step
 
-Complete Phase 0 against the current fork. The cloud host and budget are now selected: Cloudflare Free + GitHub Actions Free, target $0/month and hard cap $10/month. Next implement the static dashboard/control API and private R2 integration in a test-only branch; do not provision paid services or enable paid generation.
+Complete Phase 0 against the current fork. The selected target is strict $0/month. Next complete the repository capability audit and run a no-paid-API render smoke test. Do not provision Cloudflare resources, create an R2 bucket, attach a payment method, or enable paid generation without separate explicit approval.
