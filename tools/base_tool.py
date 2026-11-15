@@ -152,6 +152,49 @@ import threading as _threading
 _EXECUTE_DEPTH = _threading.local()
 
 
+def _enforce_editing_only(fn: Callable) -> Callable:
+    """Block generation, publishing, API, GPU, and network tools in edit-only mode.
+
+    This guard runs outside the cache wrapper, so cached results cannot bypass
+    the selected execution profile. It is intentionally opt-in for compatibility;
+    the zero-cost editing workflow sets OPENMONTAGE_PROFILE=editing_only.
+    """
+    if getattr(fn, "_editing_only_guarded", False):
+        return fn
+
+    @functools.wraps(fn)
+    def wrapper(self, inputs: Any, *args: Any, **kwargs: Any):
+        profile = os.environ.get("OPENMONTAGE_PROFILE", "").strip().lower()
+        if profile != "editing_only":
+            return fn(self, inputs, *args, **kwargs)
+
+        blocked_reasons = []
+        if self.tier in (ToolTier.GENERATE, ToolTier.PUBLISH):
+            blocked_reasons.append(f"tier={self.tier.value}")
+        if self.runtime in (ToolRuntime.API, ToolRuntime.HYBRID, ToolRuntime.LOCAL_GPU):
+            blocked_reasons.append(f"runtime={self.runtime.value}")
+        if getattr(self.resource_profile, "network_required", False):
+            blocked_reasons.append("network_required=true")
+
+        # Video analysis may accept either a local file or a remote URL. In the
+        # editing-only profile, only user-supplied local footage is permitted.
+        if self.name == "video_analyzer" and isinstance(inputs, dict):
+            source = str(inputs.get("source", "")).strip().lower()
+            if source.startswith(("http://", "https://", "www.")):
+                blocked_reasons.append("remote_video_source")
+
+        if blocked_reasons:
+            raise PermissionError(
+                f"Tool '{self.name}' is blocked by OPENMONTAGE_PROFILE=editing_only "
+                f"({', '.join(blocked_reasons)}). Use local editing/analysis tools "
+                "with user-supplied media only."
+            )
+        return fn(self, inputs, *args, **kwargs)
+
+    wrapper._editing_only_guarded = True  # type: ignore[attr-defined]
+    return wrapper
+
+
 def _instrument_execute(fn: Callable) -> Callable:
     """Wrap a tool's execute() with Backlot event emission.
 
@@ -418,7 +461,7 @@ class BaseTool(ABC):
         if impl is not None and not getattr(impl, "__isabstractmethod__", False):
             # Cache is outermost: a hit skips both the live call and its event
             # emission. Instrumentation wraps the raw implementation beneath it.
-            cls.execute = _cache_execute(_instrument_execute(impl))
+            cls.execute = _enforce_editing_only(_cache_execute(_instrument_execute(impl)))
 
     # --- Identity (override in subclasses) ---
     name: str = ""
