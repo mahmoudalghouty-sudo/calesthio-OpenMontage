@@ -50,7 +50,7 @@ jobs:
           if profile not in {"instagram_reels", "instagram_feed", "youtube_shorts", "youtube_landscape", "tiktok"}:
               raise SystemExit("Unsupported output_profile")
           file_id = str(data.get("file_id", ""))
-          if not test_mode and not re.fullmatch(r"[A-Za-z0-9_-]{6,160}", file_id):
+          if test_mode == "false" and not re.fullmatch(r"[A-Za-z0-9_-]{6,160}", file_id):
               raise SystemExit("A valid tmp0 file_id is required")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
               out.write(f"test_mode={test_mode}\n")
@@ -133,20 +133,8 @@ jobs:
               echo "::error::Add TMP0_E2EE_PASSWORD in repository Settings > Secrets and variables > Actions."
               exit 1
             fi
-            echo "::add-mask::$PASS"
             curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o transfer-client/source-info.json
             node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Source is not client-encrypted');"
-            timeout 300s node transfer-client/tmp0.js download "$FILE_ID" --password "$PASS" --output "projects/$PROJECT_ID/assets/source.mp4"
-            SIZE="$(stat -c%s "projects/$PROJECT_ID/assets/source.mp4")"
-            if [ "$SIZE" -gt 524288000 ]; then
-              echo "::error::Source exceeds the 500 MB safe limit for this first cloud workflow."
-              exit 1
-            fi
-          fi
-          echo "::add-mask::$PASS"
-            curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o transfer-client/source-info.json
-            node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Source is not client-encrypted');"
-            mkdir -p "projects/$PROJECT_ID/assets"
             timeout 300s node transfer-client/tmp0.js download "$FILE_ID" --password "$PASS" --output "projects/$PROJECT_ID/assets/source.mp4"
             SIZE="$(stat -c%s "projects/$PROJECT_ID/assets/source.mp4")"
             if [ "$SIZE" -gt 524288000 ]; then
