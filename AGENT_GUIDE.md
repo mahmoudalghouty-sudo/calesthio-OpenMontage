@@ -772,3 +772,7 @@ When the user wants to render from an Android phone through the isolated GitHub-
 - Keep `OPENMONTAGE_PROFILE=editing_only`. Do not invoke paid providers, generation APIs, or publishing integrations.
 - If the secret is missing, the source is not client-encrypted, or any validation fails, stop and report the blocker. Do not request a real source video as a test.
 - The first cloud path currently supports cuts, optional SRT subtitles, and platform formatting. Deep second-by-second marketing analysis, competitor research, and the full studio UI remain unfinished and must not be claimed as available.
+
+## Marketing Video Intelligence (Organic + Paid)
+
+When asked to analyze, improve, compare, or produce an organic social video or paid ad, read `skills/meta/marketing-video-intelligence.md` before analysis. Use the existing `video_analyzer`, FFmpeg, scene detection, audio inspection, and keyframe tools where available. Produce a timestamped evidence-led report and heuristic scorecard. Never claim measured retention, conversion, ROAS, competitor spend, or sales without authorized analytics. Respect platform access controls and use no paid APIs under the editing-only profile.
