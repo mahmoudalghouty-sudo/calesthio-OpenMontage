@@ -19,6 +19,8 @@ jobs:
   validate:
     name: Validate Python
     runs-on: ubuntu-latest
+    env:
+      OPENMONTAGE_PROFILE: editing_only
 
     steps:
       - name: Checkout repository
