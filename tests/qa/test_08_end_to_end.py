@@ -455,7 +455,7 @@ except Exception as e:
     check("Edit decisions validates against schema", False, str(e))
 
 write_checkpoint(
-    PIPELINE_DIR, PROJECT_ID, "edit", "completed",
+    PIPELINE_DIR, PROJECT_ID, "edit", "completed", human_approved=True,
     artifacts={"edit_decisions": edit_decisions},
     pipeline_type="animated-explainer",
 )
@@ -573,7 +573,7 @@ except Exception as e:
     check("Render report validates against schema", False, str(e))
 
 write_checkpoint(
-    PIPELINE_DIR, PROJECT_ID, "compose", "completed",
+    PIPELINE_DIR, PROJECT_ID, "compose", "completed", human_approved=True,
     artifacts={"render_report": render_report},
     pipeline_type="animated-explainer",
     cost_snapshot=tracker.cost_snapshot(),
