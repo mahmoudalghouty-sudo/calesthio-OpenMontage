@@ -68,8 +68,10 @@ jobs:
           timeout 180s node tmp0.js upload proof/source.mp4 --encrypt --password "$PASS" \
             --expires 1h --max-downloads 1 --json > proof/upload.json
 
-          FILE_ID="$(node -e "const x=require('./proof/upload.json'); if(!x.clientEncrypted) process.exit(2); process.stdout.write(x.fileId)")"
+          FILE_ID="$(node -e "const x=JSON.parse(require('fs').readFileSync('proof/upload.json','utf8')); if(!x.fileId) process.exit(2); process.stdout.write(x.fileId)")"
           test -n "$FILE_ID"
+          curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o proof/info.json
+          node -e "const x=JSON.parse(require('fs').readFileSync('proof/info.json','utf8')); if(!x.clientEncrypted) process.exit(3)"
 
           timeout 180s node tmp0.js download "$FILE_ID" --password "$PASS" --output proof/recovered.mp4
 
