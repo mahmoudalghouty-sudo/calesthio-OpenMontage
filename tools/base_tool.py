@@ -12,6 +12,7 @@ import inspect
 import json
 import os
 import platform
+import re
 import subprocess
 import shutil
 import time
@@ -152,37 +153,93 @@ import threading as _threading
 _EXECUTE_DEPTH = _threading.local()
 
 
+_EDITING_ONLY_PROFILE = "editing_only"
+
+# Any "<scheme>://" reference. Single-letter schemes are excluded so Windows
+# drive paths written with forward slashes ("C://clips/a.mp4") stay local.
+_URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.\-]+://")
+_LOCAL_URL_SCHEMES = ("file://",)
+
+
+def _active_execution_profile() -> str:
+    """Normalized OPENMONTAGE_PROFILE value ("editing-only" == "editing_only")."""
+    raw = os.environ.get("OPENMONTAGE_PROFILE", "")
+    return raw.strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _is_remote_reference(value: Any) -> bool:
+    """Whether an input value points at network media instead of a local file.
+
+    Deliberately broader than any single tool's own URL detection, so the
+    policy guard is a superset of every code path that could open a connection:
+    any URL scheme other than file://, protocol-relative "//host/...", bare
+    "www." hosts, and lists/tuples/dicts containing any of those.
+    """
+    if isinstance(value, (list, tuple, set)):
+        return any(_is_remote_reference(v) for v in value)
+    if isinstance(value, dict):
+        return any(_is_remote_reference(v) for v in value.values())
+    if not isinstance(value, str):
+        return False
+    text = value.strip().lower()
+    if not text:
+        return False
+    if text.startswith(("//", "www.")):
+        return True
+    if _URL_SCHEME_RE.match(text):
+        return not text.startswith(_LOCAL_URL_SCHEMES)
+    return False
+
+
+def _remote_source_keys(tool: "BaseTool") -> list[str]:
+    keys = list(getattr(tool, "remote_source_input_keys", None) or [])
+    # Backstop for the reference-video entry point even if a subclass or a
+    # refactor drops the declaration.
+    if getattr(tool, "name", "") == "video_analyzer" and "source" not in keys:
+        keys.append("source")
+    return keys
+
+
+def editing_only_block_reasons(tool: "BaseTool", inputs: Any) -> list[str]:
+    """Reasons the editing_only profile refuses this call (empty = allowed).
+
+    Pure and side-effect free, so callers (preflight, selectors) can check a
+    call before doing any work.
+    """
+    reasons: list[str] = []
+    if tool.tier in (ToolTier.GENERATE, ToolTier.PUBLISH):
+        reasons.append(f"tier={tool.tier.value}")
+    if tool.runtime in (ToolRuntime.API, ToolRuntime.HYBRID, ToolRuntime.LOCAL_GPU):
+        reasons.append(f"runtime={tool.runtime.value}")
+    if getattr(tool.resource_profile, "network_required", False):
+        reasons.append("network_required=true")
+    if isinstance(inputs, dict):
+        for key in _remote_source_keys(tool):
+            if _is_remote_reference(inputs.get(key)):
+                reasons.append(f"remote_video_source({key})")
+    return reasons
+
+
 def _enforce_editing_only(fn: Callable) -> Callable:
     """Block generation, publishing, API, GPU, and network tools in edit-only mode.
 
-    This guard runs outside the cache wrapper, so cached results cannot bypass
-    the selected execution profile. It is intentionally opt-in for compatibility;
-    the zero-cost editing workflow sets OPENMONTAGE_PROFILE=editing_only.
+    Wrapper order (outermost first): this guard -> asset cache -> Backlot
+    instrumentation -> the tool's own execute(). The guard therefore decides
+    before a cache lookup/restore, before any events.jsonl write, and before
+    the tool can open a connection; nested calls (a tool delegating to another
+    tool's execute()) pass through the callee's own guard as well. It is
+    opt-in for compatibility; the zero-cost editing workflow sets
+    OPENMONTAGE_PROFILE=editing_only.
     """
     if getattr(fn, "_editing_only_guarded", False):
         return fn
 
     @functools.wraps(fn)
     def wrapper(self, inputs: Any, *args: Any, **kwargs: Any):
-        profile = os.environ.get("OPENMONTAGE_PROFILE", "").strip().lower()
-        if profile != "editing_only":
+        if _active_execution_profile() != _EDITING_ONLY_PROFILE:
             return fn(self, inputs, *args, **kwargs)
 
-        blocked_reasons = []
-        if self.tier in (ToolTier.GENERATE, ToolTier.PUBLISH):
-            blocked_reasons.append(f"tier={self.tier.value}")
-        if self.runtime in (ToolRuntime.API, ToolRuntime.HYBRID, ToolRuntime.LOCAL_GPU):
-            blocked_reasons.append(f"runtime={self.runtime.value}")
-        if getattr(self.resource_profile, "network_required", False):
-            blocked_reasons.append("network_required=true")
-
-        # Video analysis may accept either a local file or a remote URL. In the
-        # editing-only profile, only user-supplied local footage is permitted.
-        if self.name == "video_analyzer" and isinstance(inputs, dict):
-            source = str(inputs.get("source", "")).strip().lower()
-            if source.startswith(("http://", "https://", "www.")):
-                blocked_reasons.append("remote_video_source")
-
+        blocked_reasons = editing_only_block_reasons(self, inputs)
         if blocked_reasons:
             raise PermissionError(
                 f"Tool '{self.name}' is blocked by OPENMONTAGE_PROFILE=editing_only "
@@ -500,6 +557,10 @@ class BaseTool(ABC):
 
     # --- Side effects & fallback ---
     side_effects: list[str] = []
+    # Input keys that may carry a remote media reference (URL). Under
+    # OPENMONTAGE_PROFILE=editing_only a remote value in any of them is refused
+    # before execution.
+    remote_source_input_keys: list[str] = []
     fallback: Optional[str] = None
     fallback_tools: list[str] = []
 

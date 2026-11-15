@@ -49,8 +49,18 @@ class RemoteVideoAnalysisTool(BaseTool):
     runtime = ToolRuntime.LOCAL
     resource_profile = ResourceProfile(network_required=False)
 
+    def __init__(self) -> None:
+        self.executed_sources: list[str] = []
+
     def execute(self, inputs: dict) -> ToolResult:
-        raise AssertionError("remote source must never execute")
+        # The guard must stop remote sources before this body runs; local
+        # sources are expected to reach it. (The previous fixture raised for
+        # every call, so the allowed local call could never succeed.)
+        source = inputs["source"]
+        if "://" in source:
+            raise AssertionError("remote source must never execute")
+        self.executed_sources.append(source)
+        return ToolResult(success=True, data={"source": source})
 
 
 class EditingOnlyExecutionPolicyTests(unittest.TestCase):
@@ -78,6 +88,7 @@ class EditingOnlyExecutionPolicyTests(unittest.TestCase):
             result = tool.execute({"source": "/workspace/input.mp4"})
 
         self.assertTrue(result.success)
+        self.assertEqual(tool.executed_sources, ["/workspace/input.mp4"])
 
     def test_profile_is_opt_in_for_existing_workflows(self) -> None:
         with patch.dict(os.environ, {}, clear=True):

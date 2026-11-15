@@ -119,10 +119,28 @@ class CostTracker:
 
         Raises BudgetExceededError in cap mode, or ApprovalRequiredError
         when the action exceeds the single-action approval threshold.
+
+        Order matters. In cap mode the hard budget ceiling is checked first:
+        an action the budget can never fund must be refused outright as
+        BudgetExceededError, not surfaced as an ApprovalRequiredError that
+        invites a human to "approve" spend the cap forbids anyway. Under the
+        studio's zero-cost policy (cap mode, total_usd=0) every positive-cost
+        reservation therefore fails as BudgetExceededError regardless of the
+        approval settings. Approval gates still apply to actions the budget
+        could fund.
         """
         entry = self._find(entry_id)
         self._require_status(entry, EntryStatus.ESTIMATED, "reserve")
         estimated = entry["estimated_usd"]
+
+        over_budget_message = None
+        if estimated > self.usable_budget_usd:
+            over_budget_message = (
+                f"Reservation of ${estimated:.2f} exceeds usable budget "
+                f"${self.usable_budget_usd:.2f}"
+            )
+            if self.mode == BudgetMode.CAP:
+                raise BudgetExceededError(over_budget_message)
 
         # Check single-action approval threshold
         if estimated > self.single_action_approval_usd:
@@ -140,17 +158,9 @@ class CostTracker:
                         f"First paid use of tool {entry['tool']!r} requires approval"
                     )
 
-        # Check budget
-        if estimated > self.usable_budget_usd:
-            message = (
-                f"Reservation of ${estimated:.2f} exceeds usable budget "
-                f"${self.usable_budget_usd:.2f}"
-            )
-            if self.mode == BudgetMode.CAP:
-                raise BudgetExceededError(message)
-            if self.mode == BudgetMode.WARN:
-                entry["budget_warning"] = True
-                entry["budget_warning_message"] = message
+        if over_budget_message and self.mode == BudgetMode.WARN:
+            entry["budget_warning"] = True
+            entry["budget_warning_message"] = over_budget_message
 
         entry["status"] = EntryStatus.RESERVED.value
         entry["reserved_usd"] = estimated

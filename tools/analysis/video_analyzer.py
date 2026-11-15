@@ -113,6 +113,8 @@ class VideoAnalyzer(BaseTool):
         network_required=False,  # Only needed for URL sources
     )
     idempotency_key_fields = ["source", "analysis_depth"]
+    # URL sources trigger yt-dlp / transcript fetches; editing_only refuses them.
+    remote_source_input_keys = ["source"]
     side_effects = [
         "downloads video to output_dir (if URL)",
         "writes keyframe images to output_dir/keyframes/",
