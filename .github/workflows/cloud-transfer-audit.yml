@@ -1,0 +1,37 @@
+name: Cloud Transfer Client Audit
+
+on:
+  push:
+    branches:
+      - cloud-transfer-audit
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve-client-for-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Retrieve published tmp0 CLI source without executing it
+        run: |
+          mkdir -p transfer-client
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            https://tmp0.cc/api/v1/cli/tmp0.js \
+            -o transfer-client/tmp0.js
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            https://tmp0.cc/api/v1/cli/package.json \
+            -o transfer-client/package.json
+          test -s transfer-client/tmp0.js
+          test -s transfer-client/package.json
+          sha256sum transfer-client/*
+          node --check transfer-client/tmp0.js
+          cat transfer-client/package.json
+
+      - name: Preserve files for manual security review
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmp0-transfer-client-source-review
+          path: transfer-client/
+          if-no-files-found: error
+          retention-days: 1
