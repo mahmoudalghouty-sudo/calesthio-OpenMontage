@@ -124,6 +124,10 @@ jobs:
               curl --fail --silent --show-error "https://tmp0.cc/api/file/$INPUT_FILE_ID/info" -o transfer-client/source-info.json
               node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Synthetic input was not client-encrypted');"
               timeout 300s node transfer-client/tmp0.js download "$INPUT_FILE_ID" --password "$PASS" --output "projects/$PROJECT_ID/assets/source.mp4"
+              EXPECTED_SOURCE_HASH="$(sha256sum transfer-client/synthetic-source.mp4 | cut -d' ' -f1)"
+              ACTUAL_SOURCE_HASH="$(sha256sum "projects/$PROJECT_ID/assets/source.mp4" | cut -d' ' -f1)"
+              test "$EXPECTED_SOURCE_HASH" = "$ACTUAL_SOURCE_HASH"
+              echo "PASS: synthetic source survived E2EE upload/download with exact SHA-256 match."
             else
               cp transfer-client/synthetic-source.mp4 "projects/$PROJECT_ID/assets/source.mp4"
             fi
