@@ -164,6 +164,9 @@ def test_hyperframes_full_render(tmp_path: Path):
     workspace = tmp_path / "hyperframes"
     inputs = _minimal_scenario(workspace, asset)
     inputs["skip_contrast"] = True  # placeholder palette isn't WCAG-tuned
+    # CI can preserve the rendered MP4 as a workflow artifact for inspection.
+    if os.environ.get("HYPERFRAMES_QA_OUTPUT"):
+        inputs["output_path"] = os.environ["HYPERFRAMES_QA_OUTPUT"]
 
     result = HyperFramesCompose().execute(inputs)
     assert result.success, (
