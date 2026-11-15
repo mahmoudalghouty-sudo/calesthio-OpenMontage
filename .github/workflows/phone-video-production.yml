@@ -37,7 +37,12 @@ jobs:
           if not path.is_file():
               raise SystemExit("Request file not found")
           data = json.loads(path.read_text(encoding="utf-8"))
-          test_mode = data.get("test_mode") is True
+          test_mode = data.get("test_mode", False)
+          if test_mode is True:
+              test_mode = "local"
+          if test_mode not in (False, "e2ee_input", "local"):
+              raise SystemExit("test_mode must be false, local, or e2ee_input")
+          test_mode = "false" if test_mode is False else test_mode
           project_id = str(data.get("project_id", "phone-video"))
           if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,47}", project_id):
               raise SystemExit("Invalid project_id")
@@ -48,7 +53,7 @@ jobs:
           if not test_mode and not re.fullmatch(r"[A-Za-z0-9_-]{6,160}", file_id):
               raise SystemExit("A valid tmp0 file_id is required")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"test_mode={'true' if test_mode else 'false'}\n")
+              out.write(f"test_mode={test_mode}\n")
               out.write(f"project_id={project_id}\n")
               out.write(f"profile={profile}\n")
               out.write(f"file_id={file_id}\n")
@@ -104,21 +109,41 @@ jobs:
         run: |
           set -euo pipefail
           PASS="$TMP0_E2EE_PASSWORD"
-          if [ "$TEST_MODE" = "true" ]; then
+          mkdir -p "projects/$PROJECT_ID/assets"
+          if [ "$TEST_MODE" = "local" ] || [ "$TEST_MODE" = "e2ee_input" ]; then
             PASS="$(openssl rand -hex 32)"
-            mkdir -p "projects/$PROJECT_ID/assets"
             ffmpeg -hide_banner -loglevel error -y \
               -f lavfi -i "testsrc2=size=640x360:rate=24:duration=5" \
               -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=5" \
               -shortest -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
-              -c:a aac "projects/$PROJECT_ID/assets/source.mp4"
-            echo "Synthetic test source created."
+              -c:a aac transfer-client/synthetic-source.mp4
+            if [ "$TEST_MODE" = "e2ee_input" ]; then
+              timeout 300s node transfer-client/tmp0.js upload transfer-client/synthetic-source.mp4 --encrypt --password "$PASS" \
+                --expires 1h --max-downloads 3 --json > transfer-client/input-upload.json
+              INPUT_FILE_ID="$(node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/input-upload.json','utf8')); if(!x.fileId) throw new Error('Missing synthetic input file ID'); process.stdout.write(x.fileId)")"
+              curl --fail --silent --show-error "https://tmp0.cc/api/file/$INPUT_FILE_ID/info" -o transfer-client/source-info.json
+              node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Synthetic input was not client-encrypted');"
+              timeout 300s node transfer-client/tmp0.js download "$INPUT_FILE_ID" --password "$PASS" --output "projects/$PROJECT_ID/assets/source.mp4"
+            else
+              cp transfer-client/synthetic-source.mp4 "projects/$PROJECT_ID/assets/source.mp4"
+            fi
+            echo "Synthetic source prepared; mode=$TEST_MODE."
           else
             if [ -z "$PASS" ]; then
               echo "::error::Add TMP0_E2EE_PASSWORD in repository Settings > Secrets and variables > Actions."
               exit 1
             fi
             echo "::add-mask::$PASS"
+            curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o transfer-client/source-info.json
+            node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Source is not client-encrypted');"
+            timeout 300s node transfer-client/tmp0.js download "$FILE_ID" --password "$PASS" --output "projects/$PROJECT_ID/assets/source.mp4"
+            SIZE="$(stat -c%s "projects/$PROJECT_ID/assets/source.mp4")"
+            if [ "$SIZE" -gt 524288000 ]; then
+              echo "::error::Source exceeds the 500 MB safe limit for this first cloud workflow."
+              exit 1
+            fi
+          fi
+          echo "::add-mask::$PASS"
             curl --fail --silent --show-error "https://tmp0.cc/api/file/$FILE_ID/info" -o transfer-client/source-info.json
             node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/source-info.json','utf8')); if(!x.clientEncrypted) throw new Error('Source is not client-encrypted');"
             mkdir -p "projects/$PROJECT_ID/assets"
@@ -166,7 +191,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify encrypted output round-trip (synthetic test only)
-        if: steps.request.outputs.test_mode == 'true'
+        if: steps.request.outputs.test_mode != 'false'
         run: |
           set -euo pipefail
           OUTPUT="projects/${{ steps.request.outputs.project_id }}/renders/final.mp4"
@@ -178,7 +203,7 @@ jobs:
           echo "PASS: rendered output survived E2EE upload/download with exact SHA-256 match."
 
       - name: Upload synthetic render proof only
-        if: steps.request.outputs.test_mode == 'true'
+        if: steps.request.outputs.test_mode != 'false'
         uses: actions/upload-artifact@v4
         with:
           name: openmontage-phone-video-production-proof
