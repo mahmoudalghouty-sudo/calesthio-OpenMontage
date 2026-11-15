@@ -459,8 +459,8 @@ class BaseTool(ABC):
         super().__init_subclass__(**kwargs)
         impl = cls.__dict__.get("execute")
         if impl is not None and not getattr(impl, "__isabstractmethod__", False):
-            # Cache is outermost: a hit skips both the live call and its event
-            # emission. Instrumentation wraps the raw implementation beneath it.
+            # The execution-profile guard is outermost so a cache hit cannot
+            # bypass policy. Cache and Backlot instrumentation wrap the raw tool.
             cls.execute = _enforce_editing_only(_cache_execute(_instrument_execute(impl)))
 
     # --- Identity (override in subclasses) ---
