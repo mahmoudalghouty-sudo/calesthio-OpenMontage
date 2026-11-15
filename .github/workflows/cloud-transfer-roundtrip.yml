@@ -65,13 +65,13 @@ jobs:
             -c:a aac proof/source.mp4
 
           SOURCE_HASH="$(sha256sum proof/source.mp4 | cut -d' ' -f1)"
-          node tmp0.js upload proof/source.mp4 --encrypt --password "$PASS" \
+          timeout 180s node tmp0.js upload proof/source.mp4 --encrypt --password "$PASS" \
             --expires 1h --max-downloads 1 --json > proof/upload.json
 
           FILE_ID="$(node -e "const x=require('./proof/upload.json'); if(!x.clientEncrypted) process.exit(2); process.stdout.write(x.fileId)")"
           test -n "$FILE_ID"
 
-          node tmp0.js download "$FILE_ID" --password "$PASS" --output proof/recovered.mp4
+          timeout 180s node tmp0.js download "$FILE_ID" --password "$PASS" --output proof/recovered.mp4
 
           RECOVERED_HASH="$(sha256sum proof/recovered.mp4 | cut -d' ' -f1)"
           test "$SOURCE_HASH" = "$RECOVERED_HASH"
