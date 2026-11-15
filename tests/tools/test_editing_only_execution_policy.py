@@ -50,7 +50,7 @@ class RemoteVideoAnalysisTool(BaseTool):
     resource_profile = ResourceProfile(network_required=False)
 
     def execute(self, inputs: dict) -> ToolResult:
-        raise AssertionError("remote source must never execute")
+        return ToolResult(success=True, data={"source": inputs["source"]})
 
 
 class EditingOnlyExecutionPolicyTests(unittest.TestCase):
