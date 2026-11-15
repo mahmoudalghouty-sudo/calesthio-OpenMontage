@@ -149,7 +149,7 @@ stages:
       - silence_cutter
       - video_trimmer
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Cuts reference valid source files
       - Subtitles enabled with proper styling
@@ -201,7 +201,7 @@ stages:
       - video_stitch
       - visual_qa
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Output video exists and is playable
       - Subtitles are synced with speech

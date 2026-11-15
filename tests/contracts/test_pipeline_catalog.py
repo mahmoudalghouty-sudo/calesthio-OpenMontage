@@ -73,3 +73,16 @@ def test_declared_approval_gates_are_enforceable(name: str) -> None:
             f"{stage['human_approval_default']} but the checkpoint writer "
             f"resolves {resolved}"
         )
+
+
+@pytest.mark.parametrize("name", PIPELINE_NAMES)
+def test_cloud_studio_requires_approval_for_every_checkpointed_stage(name: str) -> None:
+    """Cloud approval mode: no checkpointed stage may advance without a human."""
+    raw = yaml.safe_load((PIPELINE_DEFS / f"{name}.yaml").read_text(encoding="utf-8"))
+
+    for stage in raw["stages"]:
+        if stage.get("checkpoint_required", False):
+            assert stage.get("human_approval_default") is True, (
+                f"{name}.{stage['name']}: cloud studio requires explicit "
+                "human approval for every checkpointed stage"
+            )

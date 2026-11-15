@@ -65,7 +65,7 @@ stages:
     tools_available:
       - web_search
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Visual references are specific and relevant to the mood
       - Sound and music direction is substantive, not generic
@@ -217,7 +217,7 @@ stages:
       - edit_decisions
     tools_available: []
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Emotional pacing is preserved
       - Strong moments are not overcut or overcovered
@@ -255,7 +255,7 @@ stages:
       - audio_enhance
       - bgm_montage_lite
     checkpoint_required: true
-    human_approval_default: false
+    human_approval_default: true
     review_focus:
       - Output mood matches intended pacing and grade
       - Motion-required delivery was preserved without silent fallback

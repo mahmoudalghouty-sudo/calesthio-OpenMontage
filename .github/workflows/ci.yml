@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - cloud-studio-foundation
 
 permissions:
   contents: read
@@ -19,6 +20,8 @@ jobs:
   validate:
     name: Validate Python
     runs-on: ubuntu-latest
+    env:
+      OPENMONTAGE_PROFILE: editing_only
 
     steps:
       - name: Checkout repository
@@ -38,6 +41,9 @@ jobs:
 
       - name: Install dependencies
         run: make install-dev
+
+      - name: Run local FFmpeg editing smoke test
+        run: python scripts/smoke_ffmpeg_editing.py
 
       - name: Run lint smoke checks
         run: make lint

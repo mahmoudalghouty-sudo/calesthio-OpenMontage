@@ -46,6 +46,17 @@ This is a first-class workflow in OpenMontage.
 
 If a model misses this distinction, it will often fall back to plain search + guesswork. That is incorrect for OpenMontage.
 
+## Zero-Cost Editing-Only Studio Profile
+
+For this user's configured studio workflow, run local editing and analysis with user-supplied media only.
+
+- Set `OPENMONTAGE_PROFILE=editing_only` for every execution session and CI job.
+- This profile blocks tools in GENERATE/PUBLISH tiers, API/HYBRID/LOCAL_GPU runtimes, tools marked as requiring network, and remote URL input to `video_analyzer`.
+- Use local source files with FFmpeg, Remotion, HyperFrames, local scene detection, and local audio inspection.
+- Do not invoke image/video/music generation providers, paid TTS, publishing integrations, remote downloaders, or any metered endpoint.
+- If a required operation is blocked or cannot be completed locally, stop and explain the limitation; never silently fall back to a provider or paid service.
+- The profile guard is a safety layer, not proof that every possible network side effect in the repository has been audited. Continue auditing tools that spawn subprocesses or call network libraries.
+
 ## Rule Zero — All Production Goes Through a Pipeline
 
 **Every video production request MUST go through the pipeline system. No exceptions.**
@@ -732,3 +743,18 @@ The `.agents/skills/` directory is large. When you're not coming in through a to
 - Do not present a single unavailable tool in isolation. Always show the full capability picture: "X of Y providers configured for this capability."
 - Do not skip the Provider Menu at preflight. The user must see what they have AND what they could unlock.
 - Do not change provider, model, or render path without telling the user first and getting approval when the change is material.
+
+
+## Approved Local Narration Profile — British Male Advertising Voice
+
+For this user's approved narration profile, use **English only, British English, male voice, persuasive/high-energy advertising delivery**.
+
+- First engine to validate: local Kokoro-82M, British pipeline `lang_code="b"`.
+- Allowed first-pass audition voices only: `bm_george`, `bm_fable`, `bm_daniel`, `bm_lewis`.
+- Do not select a final voice by name alone. Generate the identical audition script for all four, present the WAV samples, and wait for the user's explicit choice.
+- Kokoro does not provide a guaranteed emotion control. Build persuasive delivery through approved script phrasing, punctuation, chunking, and a measured rate comparison; never claim a dedicated ad-emotion mode.
+- Keep inference local/offline after the model assets are cached. A one-time model download may be needed during setup; do not fetch model/voice assets during a production run.
+- Do not use a hosted TTS API, paid service, subscription, metered endpoint, or automatic provider fallback. Piper is not an enabled fallback until its British male voice and exact model licence have been separately checked and approved.
+- Store engine/version, voice ID, language, rate, script hash, sample rate, duration, and output path with each narration asset.
+- The design and audition harness are documented in `docs/TTS_BRITISH_MALE_DESIGN.md` and `scripts/test_kokoro_british_male_tts.py`.
+- **Status remains designed, not runtime-tested** until the harness is run on the actual execution host, all four samples pass WAV validation, offline synthesis is verified, and the user listens and selects a voice.
