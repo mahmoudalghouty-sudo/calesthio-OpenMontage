@@ -155,6 +155,19 @@ def main() -> None:
         fail(f"unexpected output dimensions: {final_video.get('width')}x{final_video.get('height')}")
     if final_video.get("codec_name") != "h264":
         fail(f"unexpected video codec: {final_video.get('codec_name')}")
+    from fractions import Fraction
+    actual_fps = float(Fraction(final_video.get("r_frame_rate", "0/1")))
+    if abs(actual_fps - profile.fps) > 0.1:
+        fail(f"unexpected frame rate: {actual_fps:.3f} fps")
+    audio_stream = next((s for s in output_probe.get("streams", []) if s.get("codec_type") == "audio"), None)
+    if not audio_stream or audio_stream.get("codec_name") != "aac":
+        fail("render output must contain an AAC audio stream")
+    output_duration = float(output_probe["format"]["duration"])
+    expected_duration = sum((c["out_seconds"] - c["in_seconds"]) / c["speed"] for c in cuts)
+    if abs(output_duration - expected_duration) > 0.75:
+        fail(f"unexpected render duration: {output_duration:.2f}s; expected about {expected_duration:.2f}s")
+    if output.stat().st_size > 524288000:
+        fail("render output exceeds the 500 MB safe upload limit")
 
     report = {
         "project_id": project_id,
@@ -170,6 +183,8 @@ def main() -> None:
             "width": int(final_video["width"]),
             "height": int(final_video["height"]),
             "codec": final_video.get("codec_name"),
+            "audio_codec": audio_stream.get("codec_name"),
+            "fps": actual_fps,
             "size_bytes": output.stat().st_size,
             "subtitle_burned": bool(subtitle_path),
             "cut_count": len(cuts),
