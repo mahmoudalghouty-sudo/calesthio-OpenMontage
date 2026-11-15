@@ -31,6 +31,16 @@ jobs:
           echo "e2d158f1d7012aee24fb584d80c86712f5b0808cf8083afbe00d87a78a5d8c04  transfer-client/tmp0.js" | sha256sum --check
           echo "f21649800f3e16bc71151f0af65d36b4f3be325c69c4b9fbfb7fa587614e515f  transfer-client/package.json" | sha256sum --check
           node --check transfer-client/tmp0.js
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("transfer-client/tmp0.js")
+          source = path.read_text()
+          old = "console.error(chalk.yellow('Warning: argon2 native module not found, using scrypt fallback'));"
+          new = "throw new Error('Argon2id unavailable; refusing incompatible scrypt fallback');"
+          assert old in source, "Expected fallback guard not found; stop rather than run unreviewed code"
+          path.write_text(source.replace(old, new, 1))
+          PY
+          node --check transfer-client/tmp0.js
 
       - name: Install transfer dependencies and require Argon2id
         working-directory: transfer-client
