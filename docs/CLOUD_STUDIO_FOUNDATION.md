@@ -58,7 +58,25 @@ Recommended deployment shape:
 - private object storage for media and final renders;
 - optional separate worker/GPU service later.
 
-The hosting provider is intentionally not hard-coded in this foundation document. Before creating billable cloud resources, confirm the provider and a maximum monthly spend. The first deployment must not create GPU instances or enable paid generation automatically.
+Budget decision: hard ceiling USD $10/month, with a target operating cost of $0/month during the prototype. Do not create or activate paid resources without a separate explicit approval.
+
+Selected zero-cost-first architecture:
+- **Dashboard:** Cloudflare Pages static assets (Free).
+- **Control API:** Cloudflare Workers Free, limited to authentication/session checks, project metadata, approval state, and dispatching jobs. Never run FFmpeg, Python video rendering, or AI inference inside a Worker.
+- **Media storage:** Cloudflare R2 Standard private bucket, staying within the 10 GB-month and request free allowances.
+- **Render execution:** GitHub Actions on the repository's included monthly minutes. Actions workers run bounded CPU jobs, use FFmpeg/Remotion where supported, and upload outputs to private R2. No always-on VM and no GPU.
+- **Project metadata:** versioned JSON/checkpoint files in the repository for the initial prototype; move mutable metadata to a durable store only if required and after reviewing free-tier constraints.
+- **Approval:** Claude Code remains the authoritative approval interface. A stage cannot advance until the user explicitly approves that stage. The dashboard may display status, but must not silently approve.
+- **Private access:** Cloudflare Access or an equivalent reviewed single-owner authentication layer in front of the dashboard and API. Verify current free eligibility and exact setup before enabling public DNS.
+
+Important limits:
+- Workers Free has a 10 ms CPU limit per invocation and is only the lightweight control plane.
+- GitHub Actions Free for private repositories includes 2,000 minutes/month; monitor usage and stop jobs before the quota is exhausted.
+- R2 Free includes 10 GB-month Standard storage, 1 million Class A and 10 million Class B operations, with no egress fees.
+- This stack can host the control plane and run limited CPU render jobs. It cannot promise always-on rendering, heavy AI inference, or GPU video generation at $0.
+- If GitHub Actions minutes, R2 usage, or any other quota would exceed the free allowance, pause and request approval; never allow automatic overage.
+
+No paid cloud resources, subscriptions, Workers Paid plan, GPU instances, or paid generation providers are authorized by this decision.
 
 ## 5. Implementation phases and acceptance criteria
 
@@ -120,4 +138,4 @@ Acceptance: interrupted jobs can resume without duplicate paid submissions; rest
 
 ## 7. Immediate next step
 
-Complete Phase 0 against the current fork, then choose the cloud host and monthly spend ceiling. Only after that should deployment files and provider-specific infrastructure be added.
+Complete Phase 0 against the current fork. The cloud host and budget are now selected: Cloudflare Free + GitHub Actions Free, target $0/month and hard cap $10/month. Next implement the static dashboard/control API and private R2 integration in a test-only branch; do not provision paid services or enable paid generation.
