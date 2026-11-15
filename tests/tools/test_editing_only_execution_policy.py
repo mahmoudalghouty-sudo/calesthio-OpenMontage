@@ -43,6 +43,16 @@ class NetworkAnalysisTool(BaseTool):
         raise AssertionError("network tool must never execute")
 
 
+class RemoteVideoAnalysisTool(BaseTool):
+    name = "video_analyzer"
+    tier = ToolTier.ANALYZE
+    runtime = ToolRuntime.LOCAL
+    resource_profile = ResourceProfile(network_required=False)
+
+    def execute(self, inputs: dict) -> ToolResult:
+        raise AssertionError("remote source must never execute")
+
+
 class EditingOnlyExecutionPolicyTests(unittest.TestCase):
     def test_local_editing_tool_is_allowed(self) -> None:
         with patch.dict(os.environ, {"OPENMONTAGE_PROFILE": "editing_only"}):
@@ -58,6 +68,16 @@ class EditingOnlyExecutionPolicyTests(unittest.TestCase):
         with patch.dict(os.environ, {"OPENMONTAGE_PROFILE": "editing_only"}):
             with self.assertRaisesRegex(PermissionError, "network_required"):
                 NetworkAnalysisTool().execute({})
+
+    def test_remote_video_reference_is_blocked_but_local_file_is_allowed(self) -> None:
+        tool = RemoteVideoAnalysisTool()
+        with patch.dict(os.environ, {"OPENMONTAGE_PROFILE": "editing_only"}):
+            with self.assertRaisesRegex(PermissionError, "remote_video_source"):
+                tool.execute({"source": "https://example.com/reference.mp4"})
+
+            result = tool.execute({"source": "/workspace/input.mp4"})
+
+        self.assertTrue(result.success)
 
     def test_profile_is_opt_in_for_existing_workflows(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
