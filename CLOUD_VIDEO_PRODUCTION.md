@@ -29,9 +29,10 @@ GitHub Actions reads the secret only at runtime. It is not placed in the reposit
 
 1. Open [tmp0.cc](https://tmp0.cc) in the phone browser.
 2. Select the source video.
-3. Enable password/client-side encryption and enter the exact password stored in `TMP0_E2EE_PASSWORD`.
-4. Set source expiry to one hour, then upload.
-5. Copy the file ID shown by the service. The file ID is not the password; without the password, the ciphertext cannot be decrypted.
+3. Rename the video to a neutral filename such as `source.mp4` first; tmp0 stores the filename as readable metadata even when the video contents are encrypted.
+4. Enable password/client-side encryption and enter the exact password stored in `TMP0_E2EE_PASSWORD`. The website and CLI use the same Argon2id + AES-256-GCM format.
+5. Set source expiry to one hour, then upload.
+6. Copy the file ID shown by the service. The file ID is not the password; without the password, the ciphertext cannot be decrypted.
 
 Do not use a normal, unencrypted upload. Do not upload any personal video until the synthetic production test has passed.
 
@@ -80,5 +81,5 @@ Before switching to a real file, the synthetic production workflow must pass. Th
 - Source and final media must remain client-encrypted while stored on tmp0.cc.
 - Real jobs must never upload media as GitHub artifacts.
 - Source upload limit for this first version: 500 MB; maximum duration: 30 minutes.
-- tmp0.cc is temporary storage, not a permanent library. The service offers no guaranteed uptime.
+- tmp0.cc is temporary storage, not a permanent library; it keeps no backups and offers no guaranteed uptime. Browser-based E2EE depends on the JavaScript served by tmp0.cc, so do not use this path for highly sensitive footage.
 - If any encryption, metadata, render, or hash check fails, stop and report the exact blocker. Never ask for a real video as a workaround.
