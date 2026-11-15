@@ -1,0 +1,79 @@
+name: Cloud Render Proof
+
+on:
+  push:
+    branches:
+      - cloud-render-proof
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-render-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Render and verify a 1080p MP4 on GitHub-hosted CPU
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate a synthetic source clip
+        run: |
+          mkdir -p proof-output
+          ffmpeg -hide_banner -y \
+            -f lavfi -i "testsrc2=size=1920x1080:rate=24:duration=5" \
+            -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=5" \
+            -shortest -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
+            -c:a aac -b:a 128k proof-output/source.mp4
+
+      - name: Perform an editing/export pass
+        run: |
+          ffmpeg -hide_banner -y -i proof-output/source.mp4 \
+            -vf "scale=1920:1080,format=yuv420p" \
+            -af "volume=0.8" -t 4 \
+            -c:v libx264 -preset veryfast -crf 23 \
+            -c:a aac -b:a 128k -movflags +faststart \
+            proof-output/openmontage-cloud-proof.mp4
+
+      - name: Verify the rendered MP4
+        run: |
+          ffprobe -v error -select_streams v:0 \
+            -show_entries stream=codec_name,width,height,pix_fmt \
+            -of default=noprint_wrappers=1 proof-output/openmontage-cloud-proof.mp4
+          ffprobe -v error -show_entries format=duration,size \
+            -of default=noprint_wrappers=1 proof-output/openmontage-cloud-proof.mp4
+          python - <<'PY'
+          import json
+          import subprocess
+
+          path = "proof-output/openmontage-cloud-proof.mp4"
+          raw = subprocess.check_output([
+              "ffprobe", "-v", "error", "-show_streams", "-show_format",
+              "-of", "json", path
+          ], text=True)
+          data = json.loads(raw)
+          video = next(s for s in data["streams"] if s["codec_type"] == "video")
+          assert video["width"] == 1920, video
+          assert video["height"] == 1080, video
+          assert float(data["format"]["duration"]) >= 3.5, data["format"]
+          print("PASS: valid 1080p MP4 rendered on GitHub-hosted CPU.")
+          PY
+
+      - name: Upload proof video
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmontage-cloud-render-proof
+          path: proof-output/openmontage-cloud-proof.mp4
+          if-no-files-found: error
+          retention-days: 1
