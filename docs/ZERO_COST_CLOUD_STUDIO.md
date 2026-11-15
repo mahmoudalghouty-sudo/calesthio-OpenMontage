@@ -71,6 +71,81 @@ A previous approval never authorizes the next gate. No automatic publishing.
 5. Evaluate private media transfer/storage. Only then request separate approval for any external account or bucket setup.
 6. Run one user-supplied short video end-to-end after explicit approval of the test plan.
 
+
+## Creative intelligence and competitor-analysis team
+
+The studio must analyze both **paid advertisements and organic videos**, at a professional, timestamp-by-timestamp level. This is analysis of existing footage and public competitor examples, not AI video generation.
+
+### Research inputs (free-first)
+
+- Accept competitor video URLs, screenshots, ad-library links, and user-uploaded reference files.
+- Use public discovery sources such as Meta Ad Library and TikTok Creative Center where content is publicly accessible.
+- Respect each platform's terms, access controls, robots restrictions, and rate limits. Do not bypass login, paywalls, CAPTCHAs, geographic restrictions, or anti-bot protections.
+- If a platform does not provide a lawful downloadable asset or accessible transcript, ask the user to provide the video file or capture; do not promise automatic extraction.
+- Store source URL, platform, observed date, format, and research notes so that findings are traceable. Do not infer competitor spend, conversion rate, or sales from a creative alone.
+
+### Analysis roles
+
+1. **Competitor Research Analyst** — collect and categorize paid and organic examples, hooks, offers, formats, calls to action, and recurring creative patterns.
+2. **Hook Analyst** — assess the opening frame, first spoken line, first visual change, curiosity, clarity, and time-to-value.
+3. **Story & Retention Analyst** — map problem, tension, demonstration, proof, payoff, and CTA; identify slow or confusing sections.
+4. **Visual Editor Analyst** — inspect shot changes, framing, legibility, product visibility, continuity, pacing, and aspect-ratio suitability.
+5. **Audio Analyst** — inspect speech clarity, loudness consistency, clipping, noise, music/effects balance, and synchronization.
+6. **Conversion & Platform Strategist** — assess audience fit, offer clarity, trust, objections, CTA, and platform-native conventions.
+7. **Final QA Reviewer** — compare the edited cut against the approved brief and issue a prioritized fix list.
+
+Claude Code orchestrates these roles and tools. They are bounded specialist workflows, not separate always-running paid agents.
+
+### Required second-by-second report
+
+For every supplied or accessible reference video, produce a timeline table with:
+
+- start/end timestamp (to the nearest practical frame or 0.1 second where source precision allows);
+- visible action and shot description;
+- spoken words / on-screen text (only when available or reliably transcribed);
+- purpose of the moment (hook, context, problem, demo, proof, objection handling, CTA, etc.);
+- attention/retention risk and why;
+- audio/visual technical observations;
+- recommended edit, replacement, trim, or caption change.
+
+Also produce an overall scorecard (0–100) with written evidence for:
+- hook strength (0–3 seconds and opening sequence);
+- message clarity;
+- audience relevance;
+- story structure and pacing;
+- visual quality and product comprehension;
+- voice/audio quality;
+- proof and credibility;
+- offer and CTA strength;
+- platform fit.
+
+Scores are editorial heuristics, not measured performance predictions. Never present them as actual retention, sales, ROAS, or conversion data. Label confidence and evidence gaps.
+
+### Analysis pipeline (no paid AI required)
+
+- Use FFprobe/FFmpeg for duration, frame rate, resolution, audio stream inspection, loudness checks, scene-change candidates, thumbnails, and timestamped frame extraction.
+- Use local/open-source speech recognition only when it can run within the available free compute allowance; otherwise accept a user-provided transcript or mark speech as untranscribed. Do not silently call a paid transcription API.
+- Use deterministic checks for technical QA and a structured human/Claude review for creative judgment.
+- Generate contact sheets and timestamped review clips so the user can verify observations.
+- Keep original media immutable; all cuts and derived files go into a separate project workspace.
+
+### Approval workflow for competitor research and editing
+
+1. User approves the target audience, product/category, platform, and competitor set.
+2. Researcher presents sourced examples and evidence; user approves the references to analyze.
+3. Analysts deliver the second-by-second report and prioritized recommendations.
+4. User approves the creative direction and edit plan.
+5. Editor creates a first cut from user-provided assets.
+6. Analysts review the first cut and produce a timestamped correction list.
+7. User approves each revision round and the final export.
+
+### Important limitations
+
+- Public ad libraries and creative-center pages do not expose every ad, every organic post, or private performance metrics.
+- A public creative can be studied for structure and execution, but its actual business performance cannot be known without authorized analytics.
+- Second-by-second semantic analysis may require a transcript or visual inspection; fully automated understanding cannot be guaranteed under a $0 compute budget.
+- If the free runner cannot process the full source, split the job into smaller segments or ask the user to provide a lower-resolution review copy. Never trigger paid compute automatically.
+
 ## Explicit non-goals
 
 - No video-generation models or avatar generation.
