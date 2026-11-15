@@ -93,7 +93,9 @@ def main() -> int:
     cp("research", "in_progress", {})
     brief = sample_artifact("research_brief")
     brief["topic"] = "The Last Lighthouse"
-    cp("research", "completed", {"research_brief": brief})
+    cp("research", "awaiting_human", {"research_brief": brief})
+    time.sleep(wait)  # simulated reviewer inspects the research brief
+    cp("research", "completed", {"research_brief": brief}, human_approved=True)
 
     # Proposal must be approved before the script can advance.
     proposal = sample_artifact("proposal_packet")
