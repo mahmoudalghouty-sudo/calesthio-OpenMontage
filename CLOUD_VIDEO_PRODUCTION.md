@@ -83,3 +83,16 @@ Before switching to a real file, the synthetic production workflow must pass. Th
 - Source upload limit for this first version: 500 MB; maximum duration: 30 minutes.
 - tmp0.cc is temporary storage, not a permanent library; it keeps no backups and offers no guaranteed uptime. Browser-based E2EE depends on the JavaScript served by tmp0.cc, so do not use this path for highly sensitive footage.
 - If any encryption, metadata, render, or hash check fails, stop and report the exact blocker. Never ask for a real video as a workaround.
+
+## Latest verified result
+
+Synthetic end-to-end run: [GitHub Actions run 43772250282](https://github.com/mahmoudalghouty-sudo/calesthio-OpenMontage/actions/runs/43772250282) — success.
+
+- Synthetic source uploaded to tmp0.cc with client-side encryption, then downloaded/decrypted on the runner.
+- Source SHA-256 matched exactly after encrypted transfer.
+- Two cuts and SRT captions were rendered by OpenMontage `VideoCompose`.
+- Output verified as 1080×1920, 30 fps, H.264 video + AAC audio; duration 4.533 seconds.
+- Output was uploaded encrypted, downloaded/decrypted, and its SHA-256 matched exactly.
+- Only synthetic output was retained as a one-day GitHub artifact.
+
+**Not yet tested:** the actual Android browser upload and download, and a real user video. The user must configure `TMP0_E2EE_PASSWORD` and complete the synthetic phone round-trip before using personal or customer footage.
