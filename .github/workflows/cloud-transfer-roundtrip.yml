@@ -91,6 +91,7 @@ jobs:
             -of json proof/recovered.mp4
           echo "PASS: E2EE upload/download round-trip preserved the exact video bytes."
 
+          cd ..
           python -m pip install --disable-pip-version-check python-dotenv
           python - <<'PY'
           from lib.env_loader import load_env
