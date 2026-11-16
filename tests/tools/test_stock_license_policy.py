@@ -1,6 +1,6 @@
 import pytest
 
-from tools.video.direct_clip_search import ASSET_ACQUISITION_ALLOWED_SOURCES, DirectClipSearch
+from tools.video.direct_clip_search import (\n    ASSET_ACQUISITION_ALLOWED_SOURCES,\n    DirectClipSearch,\n    is_allowed_asset_url,\n)
 from tools.video.stock_sources.license_policy import is_commercially_usable_license
 
 
@@ -52,6 +52,36 @@ def test_cc_attribution_requires_creator_and_source_page():
         "CC BY 4.0", creator="Creator", source_url="https://example.org/item"
     )
 
+
+
+@pytest.mark.parametrize(
+    "source,url",
+    [
+        ("archive_org", "https://archive.org/download/example/video.mp4"),
+        ("archive_org", "https://ia800.us.archive.org/1/items/example/video.mp4"),
+        ("loc", "https://tile.loc.gov/storage-services/example.mp4"),
+        ("noaa", "https://oceanexplorer.noaa.gov/video/example.mp4"),
+        ("wikimedia", "https://upload.wikimedia.org/wikipedia/commons/example.webm"),
+    ],
+)
+def test_asset_acquisition_allows_https_provider_hosts(source, url):
+    assert is_allowed_asset_url(source, url)
+
+
+@pytest.mark.parametrize(
+    "source,url",
+    [
+        ("wikimedia", "http://upload.wikimedia.org/example.webm"),
+        ("wikimedia", "https://evil.example/upload.wikimedia.org/example.webm"),
+        ("archive_org", "https://169.254.169.254/latest/meta-data/"),
+        ("loc", "https://loc.gov.evil.example/item"),
+        ("noaa", "https://noaa.gov.evil.example/video"),
+        ("archive_org", "https://archive.org.evil.example/download/video.mp4"),
+        ("wikimedia", "https://upload.wikimedia.org:8443/example.webm"),
+    ],
+)
+def test_asset_acquisition_rejects_non_https_and_off_provider_hosts(source, url):
+    assert not is_allowed_asset_url(source, url)
 
 
 def test_asset_acquisition_source_allowlist_is_no_key_and_explicit():
