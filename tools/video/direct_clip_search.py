@@ -34,6 +34,7 @@ No CLIP model. No embeddings. No corpus index. Just files on disk.
 from __future__ import annotations
 
 from contextlib import contextmanager
+import os
 import subprocess
 import time
 import urllib.parse
@@ -54,6 +55,14 @@ from tools.base_tool import (
     ToolStatus,
     ToolTier,
 )
+
+
+ASSET_ACQUISITION_ALLOWED_SOURCES = frozenset({
+    "archive_org",
+    "loc",
+    "noaa",
+    "wikimedia",
+})
 
 
 class _DeadlineExceeded(TimeoutError):
@@ -268,6 +277,20 @@ class DirectClipSearch(BaseTool):
             output_dir = Path(inputs["output_dir"])
             queries: list[dict] = list(inputs["queries"])
             source_names: Optional[list[str]] = inputs.get("sources")
+            if os.environ.get("OPENMONTAGE_PROFILE", "").strip().lower() == "asset_acquisition":
+                requested_sources = set(source_names or ASSET_ACQUISITION_ALLOWED_SOURCES)
+                disallowed = sorted(requested_sources - ASSET_ACQUISITION_ALLOWED_SOURCES)
+                if disallowed:
+                    return ToolResult(
+                        success=False,
+                        error=(
+                            "asset_acquisition profile permits only no-key stock sources: "
+                            + ", ".join(sorted(ASSET_ACQUISITION_ALLOWED_SOURCES))
+                            + ". Rejected: "
+                            + ", ".join(disallowed)
+                        ),
+                    )
+                source_names = sorted(requested_sources)
             filters_in: dict = inputs.get("filters") or {}
             clips_per_query = int(inputs.get("clips_per_query", 3))
             extract_thumbs = bool(inputs.get("extract_thumbnails", True))
