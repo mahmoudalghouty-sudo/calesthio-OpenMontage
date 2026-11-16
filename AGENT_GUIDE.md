@@ -46,6 +46,24 @@ This is a first-class workflow in OpenMontage.
 
 If a model misses this distinction, it will often fall back to plain search + guesswork. That is incorrect for OpenMontage.
 
+## Automatic Niche Market Research → Original Video Adaptation
+
+When a user uploads a reference video and gives no detailed brief, do not stop after describing the reference and do not ask them to explain the niche if it is reasonably inferable.
+
+**Read:** `skills/meta/niche-market-intelligence-director.md`
+
+Follow that workflow to:
+- deeply analyze the supplied video with timestamped observations;
+- classify its niche, audience, problem, and offer;
+- conduct read-only research into public competitor content using a separately enabled research capability;
+- distinguish evidence from hypotheses and never equate views/likes with sales;
+- explain the reference's creative strengths and weaknesses;
+- create a genuinely original adaptation (new script, hook, shot plan, captions, CTA);
+- render and quality-check the result using only available zero-cost permitted tools;
+- return the video, evidence links, timestamped analysis, and any honest limitations.
+
+The zero-cost `editing_only` profile remains locked down. Competitor research must run only through a separate explicitly enabled read-only research profile; never weaken the editing profile or silently enable network access. If the required research or generation capability is unavailable, state that limitation and continue only with the stages that can be truthfully completed.
+
 ## Zero-Cost Editing-Only Studio Profile
 
 For this user's configured studio workflow, run local editing and analysis with user-supplied media only.
