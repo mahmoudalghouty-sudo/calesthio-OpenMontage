@@ -160,6 +160,23 @@ jobs:
           echo "CLOUD_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
           echo "CLOUD_TEST_MODE=$TEST_MODE" >> "$GITHUB_ENV"
 
+      - name: Acquire optional commercial-safe stock footage
+        if: steps.request.outputs.test_mode == 'false'
+        env:
+          OPENMONTAGE_PROFILE: asset_acquisition
+          PROJECT_ID: ${{ steps.request.outputs.project_id }}
+        run: |
+          python scripts/cloud_asset_acquisition.py
+          test -s "projects/$PROJECT_ID/artifacts/stock-assets.json"
+
+      - name: Create empty stock manifest for synthetic proof
+        if: steps.request.outputs.test_mode != 'false'
+        env:
+          PROJECT_ID: ${{ steps.request.outputs.project_id }}
+        run: |
+          mkdir -p "projects/$PROJECT_ID/artifacts"
+          printf '{"version":1,"project_id":"%s","commercial_safe_only":true,"assets":[]}' "$PROJECT_ID" > "projects/$PROJECT_ID/artifacts/stock-assets.json"
+
       - name: Render with OpenMontage VideoCompose
         env:
           OPENMONTAGE_PROFILE: editing_only
