@@ -59,7 +59,7 @@ Claude Code writes only this small JSON request to `jobs/requests/next.json`, co
 - `cuts`: optional; if omitted, the entire source is used. Each cut has `in_seconds`, `out_seconds`, and optional `speed` (0.5–2.0).
 - `subtitles_srt`: optional timed captions. This text is committed to a public repository, so include only copy that is safe to be public.
 
-The first cloud path supports cuts, subtitle burn-in, and output formatting. It does not yet provide the planned deep second-by-second marketing analysis, competitor research, or full studio interface. Do not describe those features as complete.
+The first cloud path supports cuts, subtitle burn-in, and output formatting. It does not yet execute deep second-by-second marketing analysis, automated competitor research, or a full studio interface. The repository does include stock-source adapters and direct clip search; these must be run outside the locked-down render profile, with commercial-safe metadata filtering enabled and every asset's source page checked. Do not describe the broader studio as complete.
 
 ## Trigger and retrieve the result
 
@@ -70,7 +70,7 @@ The first cloud path supports cuts, subtitle burn-in, and output formatting. It 
 
 ## Synthetic test
 
-The checked-in request used for validation has `"test_mode": "e2ee_input"`. It creates synthetic media, encrypts and uploads it to tmp0.cc, downloads and decrypts it on the runner, renders a vertical MP4 through OpenMontage, encrypts and uploads the result, downloads it again, and compares exact SHA-256 hashes. It does not require the password secret and does not use personal media.
+The checked-in request used for the latest validation has `"test_mode": "secret_e2ee"`. It creates synthetic media, encrypts and uploads it to tmp0.cc using the repository secret, downloads and decrypts it on the runner, renders a vertical MP4 through OpenMontage, encrypts and uploads the result, downloads it again, and compares exact SHA-256 hashes. It uses no personal media. The verified run is [43814455390](https://github.com/mahmoudalghouty-sudo/calesthio-OpenMontage/actions/runs/43814455390).
 
 Before switching to a real file, the synthetic production workflow must pass. The initial source-transfer proof is separate and also must pass.
 
