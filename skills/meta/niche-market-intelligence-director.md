@@ -24,6 +24,7 @@ Treat the supplied video as a creative and market reference, not as footage to c
    - Record URLs, dates where available, visible engagement signals, creative patterns, repeated hooks, offers, objections, and gaps.
    - Treat views/likes/comments as observable signals, not proof of conversion or causal success. Never claim an ad is profitable or a video converted unless reliable evidence supports it.
    - If public access is blocked, return a clearly labelled limited analysis rather than fabricating competitor findings.
+   - Do not claim that a separate research profile exists unless the current runtime actually exposes and permits it. Do not scrape sites against their terms or use competitor media as production assets.
 
 4. **Explain why the reference may work**
    - Separate directly observed creative mechanics from hypotheses about audience psychology.
