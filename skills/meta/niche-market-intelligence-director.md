@@ -40,7 +40,7 @@ Treat the supplied video as a creative and market reference, not as footage to c
 5a. **Prepare the cloud production request**
    - After the reference analysis and original script are complete, create a shot-level `asset_queries` list only for shots that cannot be satisfied by the supplied reference footage.
    - Use the separate `asset_acquisition` step; do not perform network acquisition in `editing_only`.
-   - Build a chronological `timeline` with segments that use either `source: "reference"` or an `asset_id` returned in the verified stock manifest. Never place a URL or arbitrary path in the timeline.
+   - Build a chronological `timeline` with segments that use either `source: "reference"` or `source: "stock"` plus the predeclared `slot_id` that matches an `asset_queries` entry. The cloud job resolves that slot to the acquired manifest asset. Never place a URL or arbitrary path in the timeline.
    - Write original subtitle text to `subtitles_srt`. Do not put passwords, private notes, or personal details in the request file because it is committed to a public repository.
    - Set `test_mode` to false only for a real, encrypted tmp0 upload after the user has completed the browser upload. Never replace the synthetic fixture with a real file ID until the source has been uploaded client-side encrypted.
    - Commit only the request JSON and non-sensitive production instructions. Never commit source media, decrypted media, rendered media, passwords, API keys, or stock downloads.
