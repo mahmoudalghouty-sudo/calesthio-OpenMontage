@@ -69,10 +69,10 @@ The zero-cost `editing_only` profile remains locked down for render jobs. Networ
 
 For this user's configured studio workflow, run local editing and analysis with user-supplied media only.
 
-- Set `OPENMONTAGE_PROFILE=editing_only` for every execution session and CI job.
+- Default to `OPENMONTAGE_PROFILE=editing_only` for analysis/rendering and every CI job. The only exception is the isolated stock acquisition step, which may set `OPENMONTAGE_PROFILE=asset_acquisition` and is restricted to `direct_clip_search` with the explicit no-key source allowlist.
 - This profile blocks tools in GENERATE/PUBLISH tiers, API/HYBRID/LOCAL_GPU runtimes, tools marked as requiring network, and remote URL input to `video_analyzer`.
 - Use local source files with FFmpeg, Remotion, HyperFrames, local scene detection, and local audio inspection.
-- Do not invoke image/video/music generation providers, paid TTS, publishing integrations, remote downloaders, or any metered endpoint.
+- Do not invoke image/video/music generation providers, paid TTS, publishing integrations, general remote downloaders, or any metered endpoint. `asset_acquisition` is not a general network permission.
 - If a required operation is blocked or cannot be completed locally, stop and explain the limitation; never silently fall back to a provider or paid service.
 - The profile guard is a safety layer, not proof that every possible network side effect in the repository has been audited. Continue auditing tools that spawn subprocesses or call network libraries.
 
