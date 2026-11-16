@@ -1,5 +1,6 @@
 import pytest
 
+from tools.video.direct_clip_search import ASSET_ACQUISITION_ALLOWED_SOURCES, DirectClipSearch
 from tools.video.stock_sources.license_policy import is_commercially_usable_license
 
 
@@ -49,3 +50,26 @@ def test_cc_attribution_requires_creator_and_source_page():
     assert is_commercially_usable_license(
         "CC BY 4.0", creator="Creator", source_url="https://example.org/item"
     )
+
+
+
+def test_asset_acquisition_source_allowlist_is_no_key_and_explicit():
+    assert ASSET_ACQUISITION_ALLOWED_SOURCES == {
+        "archive_org",
+        "loc",
+        "noaa",
+        "wikimedia",
+    }
+
+
+def test_asset_acquisition_rejects_api_key_sources_before_network(tmp_path, monkeypatch):
+    monkeypatch.setenv("OPENMONTAGE_PROFILE", "asset_acquisition")
+    result = DirectClipSearch().execute(
+        {
+            "output_dir": str(tmp_path / "assets"),
+            "queries": [{"query": "dog grooming"}],
+            "sources": ["pexels"],
+        }
+    )
+    assert not result.success
+    assert "Rejected: pexels" in result.error
