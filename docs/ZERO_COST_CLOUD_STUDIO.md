@@ -34,16 +34,18 @@ This studio is an **editing, assembly, review, and export workflow** for user-su
    - Existing Remotion/HyperFrames components only where the repo audit confirms they are needed.
    - No AI video generation. No paid TTS or voice API. Narration is supplied as an audio file by the user or produced with an explicitly approved free/local method.
 
-## Human approval gates
+## Autonomy and approval gates
 
-Require explicit user approval before:
-- accepting a creative brief and locking the script;
-- locking the scene/edit plan;
-- starting a render job;
-- accepting the rendered preview;
-- exporting the final deliverable.
+Within the configured zero-cost studio scope, Claude Code should make routine creative and editing decisions autonomously and complete the draft/render/technical-QC cycle without stopping for approval at every stage.
 
-A previous approval never authorizes the next gate. No automatic publishing.
+- Read `studio_profile.yaml` and use its default market, language, platforms, audio, visual, and review-panel settings.
+- Automatically choose one strongest original direction when the reference clearly identifies the niche and intended outcome.
+- Automatically prepare the script, shot plan, captions, timeline, stock queries, render, and technical QC.
+- Do not ask the user to approve routine cuts, captions, or render iterations.
+- Stop and ask only for an essential unknown, unclear rights, a materially risky factual claim, or a requested action outside the approved scope.
+- Publishing to social platforms, paid spending, paid services, changing account/security settings, or irreversible deletion always requires explicit approval.
+
+A previous approval never authorizes a paid or external publishing action. No automatic publishing.
 
 ## Hard cost controls
 
