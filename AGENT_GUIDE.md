@@ -37,7 +37,7 @@ This is a first-class workflow in OpenMontage.
    - style
    - what makes it work
 4. **Then** run normal capability audit and pipeline selection
-5. Present **2-3 differentiated concepts** for the user's version — not a carbon copy
+5. For this user's reference-video workflow, do not stop at 2-3 concepts or ask them to select a concept when the niche and intended outcome are inferable. Choose the strongest zero-cost original direction and proceed through the approved local edit/render stages. Ask only one essential question when a missing fact would materially change the output or create a rights/safety risk.
 
 ### Important distinction
 
@@ -55,14 +55,14 @@ When a user uploads a reference video and gives no detailed brief, do not stop a
 Follow that workflow to:
 - deeply analyze the supplied video with timestamped observations;
 - classify its niche, audience, problem, and offer;
-- conduct read-only research into public competitor content using a separately enabled research capability;
+- conduct read-only research into public competitor content using an actually available research capability; if none is available in the runtime, report this limitation and do not invent competitors or findings;
 - distinguish evidence from hypotheses and never equate views/likes with sales;
 - explain the reference's creative strengths and weaknesses;
 - create a genuinely original adaptation (new script, hook, shot plan, captions, CTA);
-- render and quality-check the result using only available zero-cost permitted tools;
+- acquire supplementary stock footage only through `direct_clip_search` with `commercial_safe_only=true`; inspect each source page and retain attribution/provenance; render and quality-check the result using only available zero-cost permitted tools;
 - return the video, evidence links, timestamped analysis, and any honest limitations.
 
-The zero-cost `editing_only` profile remains locked down. Competitor research must run only through a separate explicitly enabled read-only research profile; never weaken the editing profile or silently enable network access. If the required research or generation capability is unavailable, state that limitation and continue only with the stages that can be truthfully completed.
+The zero-cost `editing_only` profile remains locked down for render jobs. Networked competitor research and stock acquisition must be isolated from rendering, with separate explicit permission and an allowlisted source set. Never weaken the editing profile or silently enable arbitrary network access. If the runtime cannot safely execute a research/acquisition step, state the limitation and continue with the local edit stages that can be truthfully completed.
 
 ## Zero-Cost Editing-Only Studio Profile
 
