@@ -14,6 +14,26 @@ This skill teaches you to run discovery, classify the user's setup, present capa
 
 **Skip onboarding** when the user arrives with a specific, actionable request (e.g., "Make a 60-second explainer about black holes"). Go directly to Rule Zero.
 
+## Automatic Internet Video Research Entry Point
+
+For this user's configured studio, **a user-supplied reference video is NOT required**. When the user asks to research a product, niche, competitor, or create an organic video/ad and gives a product/category/brief, start by discovering and analyzing relevant public videos on the internet.
+
+**Read:** `skills/meta/web-video-market-research-director.md` and `studio_profile.yaml`.
+
+Required behavior:
+1. Treat public internet video discovery as the default research input; do not ask the user to upload or send a reference video.
+2. Search public, accessible competitor and category creatives for the target market (default UK), prioritizing Meta Ad Library for paid ads, TikTok Creative Center for creative trends, and publicly accessible YouTube/Instagram/Facebook pages where available.
+3. Search multiple query angles: product/category, customer problem, use case, alternative/competitor terms, and relevant audience language. Record source URLs, platform, dates where available, and what was actually accessible.
+4. Inspect the actual video only when the runtime can lawfully view or retrieve it. If only a listing, thumbnail, title, caption, or metadata is accessible, label the analysis accordingly; never claim second-by-second viewing without inspecting the video frames/audio.
+5. Build a comparison set of relevant paid and organic examples, then perform timestamped creative analysis on accessible videos, using the deepest practical sampling supported by the available free compute.
+6. Separate observed facts, editorial judgments, and hypotheses. Public views/likes/comments are not proof of sales, conversions, ROAS, or profitability.
+7. Synthesize patterns and opportunities, then create a genuinely original concept, script, shot plan, captions, and CTA. Do not copy competitor footage, scripts, branding, watermarks, or distinctive creative expression.
+8. Use the existing free production path and asset licensing safeguards. Never bypass logins, paywalls, CAPTCHAs, anti-bot protections, access controls, or platform terms; never call paid APIs or enable paid compute.
+9. If the research runtime cannot access a source or the actual video, report the exact limitation and continue with the evidence that is genuinely available. Do not make user-uploaded reference media a prerequisite.
+10. Deliver source links, research date, analyzed sample, second-by-second reports where actual media was inspected, confidence/evidence gaps, and the final rendered video when the production pipeline can complete.
+
+A supplied reference video remains an optional shortcut, not the default or a required input. If one is supplied, use the separate reference-video workflow below in addition to public market research.
+
 ## Reference Video Entry Point
 
 For this user's configured studio, read `studio_profile.yaml` first and apply its non-secret defaults to all reference-video production. These defaults do not override platform safety, tool availability, or the hard $0 execution cap.
@@ -50,26 +70,26 @@ If a model misses this distinction, it will often fall back to plain search + gu
 
 ## Automatic Niche Market Research → Original Video Adaptation
 
-When a user uploads a reference video and gives no detailed brief, do not stop after describing the reference and do not ask them to explain the niche if it is reasonably inferable.
+When a user asks for a product/niche video or ad without supplying a reference, use public internet research as the default input. If a reference video is optionally supplied, combine it with public market research; do not require an upload.
 
-**Read:** `skills/meta/niche-market-intelligence-director.md`
+**Read:** `skills/meta/web-video-market-research-director.md` for no-reference requests; read `skills/meta/niche-market-intelligence-director.md` only when an optional reference video is supplied.
 
 Follow that workflow to:
-- deeply analyze the supplied video with timestamped observations;
+- discover relevant public paid ads and organic videos without requiring user-supplied media; analyze accessible videos with timestamped observations;
 - classify its niche, audience, problem, and offer;
 - conduct read-only research into public competitor content using an actually available research capability; if none is available in the runtime, report this limitation and do not invent competitors or findings;
 - distinguish evidence from hypotheses and never equate views/likes with sales;
-- explain the reference's creative strengths and weaknesses;
+- explain recurring competitor creative strengths, weaknesses, and testable opportunities;
 - create a genuinely original adaptation (new script, hook, shot plan, captions, CTA);
 - prepare `asset_queries` from the shot list, then let `scripts/cloud_asset_acquisition.py` run the separate `asset_acquisition` profile; only no-key allowlisted sources and `commercial_safe_only=true` are permitted;
-- build a `timeline` that references only the uploaded source or IDs in the acquired stock manifest; render in `editing_only`, then review the output and provenance report;
+- build a `timeline` that references only licensed acquired stock assets or other authorized production assets; render in `editing_only`, then review the output and provenance report;
 - return the video, evidence links, timestamped analysis, and any honest limitations.
 
 The zero-cost `editing_only` profile remains locked down for render jobs. Networked competitor research and stock acquisition must be isolated from rendering; stock acquisition is implemented as a separate `asset_acquisition` profile with a strict provider allowlist. Competitor research still requires an actually available read-only web research capability. Never weaken the editing profile or silently enable arbitrary network access. If the runtime cannot safely execute a research/acquisition step, state the limitation and continue with the local edit stages that can be truthfully completed.
 
 ## Zero-Cost Editing-Only Studio Profile
 
-For this user's configured studio workflow, run local editing and analysis with user-supplied media only.
+For this user's configured studio workflow, keep editing/render jobs local-media-only inside the isolated runner. Internet research and stock acquisition must run as separate, explicitly bounded read-only/acquisition steps; neither grants network access to the editing profile.
 
 - Default to `OPENMONTAGE_PROFILE=editing_only` for analysis/rendering and every CI job. The only exception is the isolated stock acquisition step, which may set `OPENMONTAGE_PROFILE=asset_acquisition` and is restricted to `direct_clip_search` with the explicit no-key source allowlist.
 - This profile blocks tools in GENERATE/PUBLISH tiers, API/HYBRID/LOCAL_GPU runtimes, tools marked as requiring network, and remote URL input to `video_analyzer`.
