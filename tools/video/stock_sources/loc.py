@@ -126,7 +126,7 @@ class LibraryOfCongressSource:
             rights_str = " ".join(r for r in rights if isinstance(r, str)).lower()
         else:
             rights_str = str(rights).lower()
-        lic = _LICENSE_PD if "public domain" in rights_str or "no known" in rights_str else _LICENSE_CHECK
+        lic = _LICENSE_PD if "public domain" in rights_str else _LICENSE_CHECK
 
         # Look for downloadable resources
         resources = item.get("resources", []) or []
