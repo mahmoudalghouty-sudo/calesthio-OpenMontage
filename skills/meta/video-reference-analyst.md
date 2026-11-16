@@ -12,14 +12,14 @@ REFERENCE-based production.
 
 ## Zero-Cost Autonomous Studio Override
 
-For this user's configured OpenMontage studio, the user's standing instruction is to send a reference video and have the agent carry the work forward without asking them to choose minor production details.
+For this user's configured OpenMontage studio, first read `studio_profile.yaml`. The user's standing instruction is to send a reference video and have the agent carry the work forward without asking them to choose minor production details.
 
 When the request is clearly "use this video as inspiration and make an original version for the same niche":
 
 - Do not ask the generic intake questions in Step 3 when the answer is inferable from the reference or the user's saved studio profile.
 - Do not present multiple concepts and wait for a selection. Choose one strongest original direction and explain the choice briefly in the final delivery report.
 - Do not impose the paid/sample-first approval gate. Use a short internal draft render only when it can be done at zero cost, then continue to the final render.
-- Keep the approved zero-cost constraints: no paid APIs, no paid GPU, no paid TTS, no music unless explicitly requested, and no women visible if that remains in the studio profile.
+- Enforce `studio_profile.yaml`: hard $0 budget, no paid APIs/GPU/storage/runner overages, no music, sound effects allowed, English narration only if a zero-cost voice path exists, and no women visible.
 - Use the reference as evidence for structure and creative mechanics, never as a source to copy protected shots, scripts, logos, or watermarks.
 - Research competitors only through an actually available public read-only search capability. If it is unavailable, clearly mark that stage as not performed; do not fabricate competitor examples or findings.
 - For supplementary footage, run only the separate `asset_acquisition` profile and the allowlisted `direct_clip_search` tool with `commercial_safe_only=true`. Then render only in `editing_only`.
