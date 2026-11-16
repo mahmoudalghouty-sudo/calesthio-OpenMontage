@@ -67,9 +67,11 @@ def build_timeline(
             media_duration = reference_duration
         elif source_kind == "stock":
             asset_id = str(item.get("asset_id", ""))
-            asset = stock_assets.get(asset_id)
+            slot_id = str(item.get("slot_id", "")).strip()
+            lookup_id = asset_id or (f"slot:{slot_id}" if slot_id else "")
+            asset = stock_assets.get(lookup_id)
             if asset is None:
-                fail(f"timeline segment {index + 1} references unavailable stock asset: {asset_id}")
+                fail(f"timeline segment {index + 1} references unavailable stock asset or slot: {lookup_id}")
             segment_source = Path(asset["path"]).resolve()
             media_duration = float(asset["duration"])
         else:
@@ -141,7 +143,11 @@ def main() -> None:
             stock_root = (assets / "stock").resolve()
             if not asset_id or stock_root not in asset_path.parents or not asset_path.is_file():
                 continue
-            stock_assets[asset_id] = {"path": asset_path, "duration": float(asset.get("duration_seconds", 0))}
+            record = {"path": asset_path, "duration": float(asset.get("duration_seconds", 0))}
+            stock_assets[asset_id] = record
+            slot_id = str(asset.get("slot_id", "")).strip()
+            if slot_id and f"slot:{slot_id}" not in stock_assets:
+                stock_assets[f"slot:{slot_id}"] = record
 
     timeline = request.get("timeline")
     if timeline is not None:
