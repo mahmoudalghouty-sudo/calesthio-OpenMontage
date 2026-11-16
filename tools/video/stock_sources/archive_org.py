@@ -537,5 +537,3 @@ def _license_from_collection(collection: str) -> str:
     licence metadata instead of inferring rights from a collection name.
     """
     return "Unknown — verify per item (Archive.org collection metadata only)"
-        return "Public Domain (archive.org home movies)"
-    return "Public Domain / CC (archive.org — verify per item)"
