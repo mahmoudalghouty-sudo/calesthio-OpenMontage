@@ -530,14 +530,12 @@ def _to_text(value: Any) -> str:
 
 
 def _license_from_collection(collection: str) -> str:
-    """Infer licence text from a collection name when no licenseurl is set.
+    """Return an explicit unknown marker when per-item rights are absent.
 
-    Prelinger items are universally public domain; broader opensource
-    collections usually are too but we're less sure, so we hedge.
+    Collection membership is not a reliable licence grant. The conservative
+    commercial acquisition path therefore rejects items without item-level
+    licence metadata instead of inferring rights from a collection name.
     """
-    col = collection.lower()
-    if "prelinger" in col:
-        return "Public Domain (Prelinger Archives)"
-    if "home_movies" in col:
+    return "Unknown — verify per item (Archive.org collection metadata only)"
         return "Public Domain (archive.org home movies)"
     return "Public Domain / CC (archive.org — verify per item)"
