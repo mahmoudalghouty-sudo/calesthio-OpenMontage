@@ -1,0 +1,64 @@
+# OpenMontage single-user studio defaults
+# Non-secret preferences only. Never put credentials or media identifiers here.
+
+studio:
+  autonomy: execute_end_to_end_within_approved_zero_cost_scope
+  default_market: United Kingdom
+  default_language: en-GB
+  default_platforms:
+    - Instagram
+    - Facebook
+  production_types:
+    - organic_social_video
+    - paid_ad_creative
+  default_output_profile: instagram_reels
+  default_duration_seconds: 30
+
+budget:
+  hard_monthly_usd: 0
+  allow_paid_api: false
+  allow_paid_gpu: false
+  allow_paid_storage: false
+  allow_paid_runner_overage: false
+  allow_payment_method_requirement: false
+
+creative:
+  music: disabled
+  sound_effects: allowed
+  narration_language: English
+  narration_voice: AI_voice_if_zero_cost_and_available
+  women_visible: false
+  original_adaptation_only: true
+  copy_competitor_script_or_footage: false
+  automatic_concept_selection: true
+  ask_only_for_essential_unknowns: true
+
+research:
+  analyze_paid_ads: true
+  analyze_organic_content: true
+  second_by_second: true
+  require_public_evidence_urls: true
+  treat_engagement_as_sales_proof: false
+  competitor_media_reuse: false
+
+quality:
+  inspect_first_3_seconds: true
+  inspect_full_timeline: true
+  technical_qc_before_delivery: true
+  iterate_on_detected_defects: true
+  publish_without_user_approval: false
+
+review_panel:
+  - innovator
+  - strategist
+  - audience_voice
+  - realist
+  - critic
+
+security:
+  render_profile: editing_only
+  stock_profile: asset_acquisition
+  only_allowlisted_stock_sources: true
+  require_commercial_safe_license_metadata: true
+  commit_media_or_secrets: false
+  upload_private_media_as_github_artifact: false
