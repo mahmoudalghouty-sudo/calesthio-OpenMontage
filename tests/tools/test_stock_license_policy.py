@@ -25,7 +25,9 @@ def test_explicit_commercial_licenses_are_accepted(license_text):
             license_text, creator="Creator", source_url="https://example.org/item"
         )
     else:
-        assert is_commercially_usable_license(license_text)
+        assert is_commercially_usable_license(
+            license_text, source_url="https://example.org/item"
+        )
 
 
 @pytest.mark.parametrize(
@@ -44,6 +46,17 @@ def test_explicit_commercial_licenses_are_accepted(license_text):
 def test_ambiguous_or_restricted_licenses_are_rejected(license_text):
     assert not is_commercially_usable_license(
         license_text, creator="Creator", source_url="https://example.org/item"
+    )
+
+
+def test_public_domain_and_cc0_require_a_source_page():
+    assert not is_commercially_usable_license("Public domain (NOAA)")
+    assert not is_commercially_usable_license("CC0 1.0")
+    assert is_commercially_usable_license(
+        "Public domain (NOAA)", source_url="https://example.org/item"
+    )
+    assert is_commercially_usable_license(
+        "CC0 1.0", source_url="https://example.org/item"
     )
 
 
