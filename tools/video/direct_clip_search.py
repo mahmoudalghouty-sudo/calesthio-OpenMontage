@@ -206,9 +206,9 @@ class DirectClipSearch(BaseTool):
             },
             "commercial_safe_only": {
                 "type": "boolean",
-                "default": True,
+                "default": False,
                 "description": (
-                    "Reject stock results unless their metadata explicitly identifies "
+                    "When enabled, reject stock results unless their metadata explicitly identifies "
                     "public-domain, CC0, CC BY, or CC BY-SA rights. Ambiguous, NC, ND, "
                     "and caveated rights are excluded. This is a conservative metadata "
                     "screen, not a substitute for checking the source item's terms."
@@ -318,7 +318,7 @@ class DirectClipSearch(BaseTool):
             clips_per_query = int(inputs.get("clips_per_query", 3))
             extract_thumbs = bool(inputs.get("extract_thumbnails", True))
             skip_existing = bool(inputs.get("skip_existing", True))
-            commercial_safe_only = bool(inputs.get("commercial_safe_only", True))
+            commercial_safe_only = bool(inputs.get("commercial_safe_only", False))
             timeout_seconds = float(inputs.get("timeout_seconds", 600))
             deadline = start + timeout_seconds
 
