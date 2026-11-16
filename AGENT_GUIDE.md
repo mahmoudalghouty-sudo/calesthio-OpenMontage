@@ -16,6 +16,8 @@ This skill teaches you to run discovery, classify the user's setup, present capa
 
 ## Reference Video Entry Point
 
+For this user's configured studio, read `studio_profile.yaml` first and apply its non-secret defaults to all reference-video production. These defaults do not override platform safety, tool availability, or the hard $0 execution cap.
+
 When the user provides a **video URL or local video file as inspiration** — for example:
 
 - "Can you make a video like this?"
