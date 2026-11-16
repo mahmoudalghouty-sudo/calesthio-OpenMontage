@@ -50,7 +50,7 @@ def is_commercially_usable_license(
         return False
 
     if "public domain" in value or "cc0" in value or "/publicdomain/" in value:
-        return bool(source_url.strip()) if source_url else True
+        return bool(source_url.strip())
 
     cc_by = bool(
         re.search(r"\bcc\s*[- ]?by(?:\s*[- ]?sa)?(?:\b|/)", value)
