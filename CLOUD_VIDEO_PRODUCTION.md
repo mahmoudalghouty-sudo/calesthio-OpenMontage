@@ -8,9 +8,11 @@ This workflow is an isolated, free-tier cloud render path for the `cloud-transfe
 2. Requires that the source is marked `clientEncrypted=true`.
 3. Downloads and decrypts the video only inside an ephemeral GitHub-hosted runner.
 4. Uses OpenMontage `VideoCompose` in `OPENMONTAGE_PROFILE=editing_only`.
-5. Supports mixed reference/stock timelines, optional SRT subtitle burn-in, and platform output profiles.\n6. Optionally searches and downloads a small set of supplementary stock clips in a separate `asset_acquisition` profile, with a strict no-key provider allowlist and conservative commercial-use metadata filtering.\n7. Renders only in the locked-down `editing_only` profile and records stock provenance, source URLs, licence labels, and SHA-256 hashes in the render report.
-6. Encrypts the rendered MP4 with the same client-side Argon2id/AES-256-GCM password before sending it to tmp0.cc.
-7. Returns a temporary download URL in the GitHub Actions run summary.
+5. Supports mixed reference/stock timelines, optional SRT subtitle burn-in, and platform output profiles.
+6. Optionally searches and downloads a small set of supplementary stock clips in a separate `asset_acquisition` profile, with a strict no-key provider allowlist and conservative commercial-use metadata filtering.
+7. Renders only in the locked-down `editing_only` profile and records stock provenance, source URLs, licence labels, and SHA-256 hashes in the render report.
+8. Encrypts the rendered MP4 with the same client-side Argon2id/AES-256-GCM password before sending it to tmp0.cc.
+9. Returns a temporary download URL in the GitHub Actions run summary.
 
 Real production jobs do **not** upload source videos, decrypted videos, final videos, or reports as GitHub artifacts. The runner is ephemeral. Only synthetic test output is uploaded as a short-lived artifact.
 
@@ -96,7 +98,7 @@ Before switching to a real file, the synthetic production workflow must pass. Th
 
 ## Latest verified result
 
-Synthetic end-to-end run: [GitHub Actions run 43772250282](https://github.com/mahmoudalghouty-sudo/calesthio-OpenMontage/actions/runs/43772250282) — success.
+Latest secret-backed synthetic end-to-end run: [GitHub Actions run 43814455390](https://github.com/mahmoudalghouty-sudo/calesthio-OpenMontage/actions/runs/43814455390) — success.
 
 - Synthetic source uploaded to tmp0.cc with client-side encryption, then downloaded/decrypted on the runner.
 - Source SHA-256 matched exactly after encrypted transfer.
@@ -105,4 +107,4 @@ Synthetic end-to-end run: [GitHub Actions run 43772250282](https://github.com/ma
 - Output was uploaded encrypted, downloaded/decrypted, and its SHA-256 matched exactly.
 - Only synthetic output was retained as a one-day GitHub artifact.
 
-**Not yet tested:** the actual Android browser upload and download, and a real user video. The user must configure `TMP0_E2EE_PASSWORD` and complete the synthetic phone round-trip before using personal or customer footage.
+**Not yet tested:** the actual Android browser upload and download, and a real user video. The repository secret `TMP0_E2EE_PASSWORD` has been configured and the secret-backed CLI round-trip has passed. The remaining manual check is a browser upload from Android and download of the encrypted result before using longer or important footage.
