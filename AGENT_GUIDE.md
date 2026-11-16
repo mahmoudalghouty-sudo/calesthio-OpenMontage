@@ -59,7 +59,8 @@ Follow that workflow to:
 - distinguish evidence from hypotheses and never equate views/likes with sales;
 - explain the reference's creative strengths and weaknesses;
 - create a genuinely original adaptation (new script, hook, shot plan, captions, CTA);
-- prepare `asset_queries` from the shot list, then let `scripts/cloud_asset_acquisition.py` run the separate `asset_acquisition` profile; only no-key allowlisted sources and `commercial_safe_only=true` are permitted;\n- build a `timeline` that references only the uploaded source or IDs in the acquired stock manifest; render in `editing_only`, then review the output and provenance report;
+- prepare `asset_queries` from the shot list, then let `scripts/cloud_asset_acquisition.py` run the separate `asset_acquisition` profile; only no-key allowlisted sources and `commercial_safe_only=true` are permitted;
+- build a `timeline` that references only the uploaded source or IDs in the acquired stock manifest; render in `editing_only`, then review the output and provenance report;
 - return the video, evidence links, timestamped analysis, and any honest limitations.
 
 The zero-cost `editing_only` profile remains locked down for render jobs. Networked competitor research and stock acquisition must be isolated from rendering; stock acquisition is implemented as a separate `asset_acquisition` profile with a strict provider allowlist. Competitor research still requires an actually available read-only web research capability. Never weaken the editing profile or silently enable arbitrary network access. If the runtime cannot safely execute a research/acquisition step, state the limitation and continue with the local edit stages that can be truthfully completed.
