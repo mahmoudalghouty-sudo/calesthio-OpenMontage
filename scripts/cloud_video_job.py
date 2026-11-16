@@ -245,7 +245,7 @@ def main() -> None:
             "size_bytes": output.stat().st_size,
             "subtitle_burned": bool(subtitle_path),
             "cut_count": len(cuts),
-            "stock_asset_count": len(stock_assets),
+            "stock_asset_count": sum(1 for key in stock_assets if not key.startswith("slot:")),
         },
         "stock_assets": [
             {
