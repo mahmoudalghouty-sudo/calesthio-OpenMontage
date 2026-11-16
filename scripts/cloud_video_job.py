@@ -228,8 +228,22 @@ def main() -> None:
             "fps": actual_fps,
             "size_bytes": output.stat().st_size,
             "subtitle_burned": bool(subtitle_path),
-            "cut_count": len(cuts),\n            "stock_asset_count": len(stock_assets),
+            "cut_count": len(cuts),
+            "stock_asset_count": len(stock_assets),
         },
+        "stock_assets": [
+            {
+                "asset_id": item.get("asset_id"),
+                "slot_id": item.get("slot_id"),
+                "query": item.get("query"),
+                "source": item.get("source"),
+                "source_url": item.get("source_url"),
+                "creator": item.get("creator"),
+                "license": item.get("license"),
+                "sha256": item.get("sha256"),
+            }
+            for item in (stock_manifest.get("assets", []) if stock_manifest_path.is_file() else [])
+        ],
     }
     (artifacts / "render-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
