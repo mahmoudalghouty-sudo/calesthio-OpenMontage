@@ -1,6 +1,10 @@
 import pytest
 
-from tools.video.direct_clip_search import (\n    ASSET_ACQUISITION_ALLOWED_SOURCES,\n    DirectClipSearch,\n    is_allowed_asset_url,\n)
+from tools.video.direct_clip_search import (
+    ASSET_ACQUISITION_ALLOWED_SOURCES,
+    DirectClipSearch,
+    is_allowed_asset_url,
+)
 from tools.video.stock_sources.license_policy import is_commercially_usable_license
 
 
