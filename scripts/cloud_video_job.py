@@ -82,23 +82,61 @@ def main() -> None:
     if duration <= 0 or duration > 1800:
         fail(f"unsupported video duration: {duration:.2f}s (allowed: 0-1800s)")
 
-    raw_cuts = request.get("cuts") or [{"in_seconds": 0, "out_seconds": duration}]
-    if not isinstance(raw_cuts, list) or not raw_cuts or len(raw_cuts) > 100:
-        fail("cuts must contain 1-100 edit segments")
+    # A timeline may mix the user's reference footage with stock clips
+    # acquired in the separate asset_acquisition step. Every stock path must
+    # resolve to the ephemeral project's assets/stock directory.
+    stock_manifest_path = artifacts / "stock-assets.json"
+    stock_assets: dict[str, dict] = {}
+    if stock_manifest_path.is_file():
+        stock_manifest = json.loads(stock_manifest_path.read_text(encoding="utf-8"))
+        if stock_manifest.get("commercial_safe_only") is not True:
+            fail("stock asset manifest is not marked commercial_safe_only")
+        for asset in stock_manifest.get("assets", []):
+            asset_id = str(asset.get("asset_id", ""))
+            asset_path = Path(str(asset.get("path", ""))).resolve()
+            stock_root = (assets / "stock").resolve()
+            if not asset_id or stock_root not in asset_path.parents or not asset_path.is_file():
+                continue
+            stock_assets[asset_id] = {"path": asset_path, "duration": float(asset.get("duration_seconds", 0))}
+
+    timeline = request.get("timeline")
+    if timeline is not None:
+        if not isinstance(timeline, list) or not timeline or len(timeline) > 100:
+            fail("timeline must contain 1-100 edit segments")
+        raw_segments = timeline
+    else:
+        raw_segments = request.get("cuts") or [{"in_seconds": 0, "out_seconds": duration, "source": "reference"}]
 
     cuts = []
-    for index, item in enumerate(raw_cuts):
+    for index, item in enumerate(raw_segments):
+        if not isinstance(item, dict):
+            fail(f"timeline segment {index + 1} must be an object")
+        source_kind = str(item.get("source", "reference"))
+        if "asset_id" in item:
+            source_kind = "stock"
+        if source_kind == "reference":
+            segment_source = source
+            media_duration = duration
+        elif source_kind == "stock":
+            asset_id = str(item.get("asset_id", ""))
+            asset = stock_assets.get(asset_id)
+            if asset is None:
+                fail(f"timeline segment {index + 1} references unavailable stock asset: {asset_id}")
+            segment_source = asset["path"]
+            media_duration = asset["duration"]
+        else:
+            fail(f"timeline segment {index + 1} has unsupported source type: {source_kind}")
         start = float(item.get("in_seconds", 0))
-        end = float(item.get("out_seconds", duration))
+        end = float(item.get("out_seconds", media_duration))
         speed = float(item.get("speed", 1.0))
-        if start < 0 or end <= start or end > duration + 0.05:
-            fail(f"cut {index + 1} is outside the source duration")
+        if start < 0 or end <= start or end > media_duration + 0.05:
+            fail(f"timeline segment {index + 1} is outside its source duration")
         if speed < 0.5 or speed > 2.0:
-            fail(f"cut {index + 1} speed must be between 0.5 and 2.0")
+            fail(f"timeline segment {index + 1} speed must be between 0.5 and 2.0")
         cuts.append({
-            "source": str(source),
+            "source": str(segment_source),
             "in_seconds": start,
-            "out_seconds": min(end, duration),
+            "out_seconds": min(end, media_duration),
             "speed": speed,
         })
 
@@ -190,7 +228,7 @@ def main() -> None:
             "fps": actual_fps,
             "size_bytes": output.stat().st_size,
             "subtitle_burned": bool(subtitle_path),
-            "cut_count": len(cuts),
+            "cut_count": len(cuts),\n            "stock_asset_count": len(stock_assets),
         },
     }
     (artifacts / "render-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
