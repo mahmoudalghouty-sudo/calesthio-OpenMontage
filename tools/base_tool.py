@@ -165,6 +165,21 @@ def _enforce_editing_only(fn: Callable) -> Callable:
     @functools.wraps(fn)
     def wrapper(self, inputs: Any, *args: Any, **kwargs: Any):
         profile = os.environ.get("OPENMONTAGE_PROFILE", "").strip().lower()
+        if profile == "asset_acquisition":
+            # The acquisition profile is deliberately narrower than a general
+            # network-enabled session: only the audited stock-search tool may run.
+            if (
+                self.name != "direct_clip_search"
+                or self.tier != ToolTier.SOURCE
+                or self.runtime != ToolRuntime.HYBRID
+                or not getattr(self.resource_profile, "network_required", False)
+            ):
+                raise PermissionError(
+                    f"Tool '{self.name}' is blocked by OPENMONTAGE_PROFILE=asset_acquisition. "
+                    "Only the allowlisted direct_clip_search stock-acquisition tool is permitted."
+                )
+            return fn(self, inputs, *args, **kwargs)
+
         if profile != "editing_only":
             return fn(self, inputs, *args, **kwargs)
 
