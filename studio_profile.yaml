@@ -34,13 +34,22 @@ creative:
   ask_only_for_essential_unknowns: true
 
 research:
+  internet_video_discovery_default: true
+  user_reference_video_required: false
   analyze_paid_ads: true
   analyze_organic_content: true
+  default_market: United Kingdom
+  preferred_public_sources:
+    - Meta Ad Library
+    - TikTok Creative Center
+    - YouTube public videos
+    - Public Instagram and Facebook videos where accessible
   second_by_second: true
   require_public_evidence_urls: true
+  require_actual_media_inspection_for_timestamped_claims: true
   treat_engagement_as_sales_proof: false
   competitor_media_reuse: false
-
+  bypass_platform_access_controls: false
 quality:
   inspect_first_3_seconds: true
   inspect_full_timeline: true
