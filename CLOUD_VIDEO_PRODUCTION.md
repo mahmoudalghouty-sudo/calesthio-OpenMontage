@@ -8,7 +8,7 @@ This workflow is an isolated, free-tier cloud render path for the `cloud-transfe
 2. Requires that the source is marked `clientEncrypted=true`.
 3. Downloads and decrypts the video only inside an ephemeral GitHub-hosted runner.
 4. Uses OpenMontage `VideoCompose` in `OPENMONTAGE_PROFILE=editing_only`.
-5. Supports sequential cuts, optional SRT subtitle burn-in, and platform output profiles.
+5. Supports mixed reference/stock timelines, optional SRT subtitle burn-in, and platform output profiles.\n6. Optionally searches and downloads a small set of supplementary stock clips in a separate `asset_acquisition` profile, with a strict no-key provider allowlist and conservative commercial-use metadata filtering.\n7. Renders only in the locked-down `editing_only` profile and records stock provenance, source URLs, licence labels, and SHA-256 hashes in the render report.
 6. Encrypts the rendered MP4 with the same client-side Argon2id/AES-256-GCM password before sending it to tmp0.cc.
 7. Returns a temporary download URL in the GitHub Actions run summary.
 
@@ -59,7 +59,17 @@ Claude Code writes only this small JSON request to `jobs/requests/next.json`, co
 - `cuts`: optional; if omitted, the entire source is used. Each cut has `in_seconds`, `out_seconds`, and optional `speed` (0.5–2.0).
 - `subtitles_srt`: optional timed captions. This text is committed to a public repository, so include only copy that is safe to be public.
 
-The first cloud path supports cuts, subtitle burn-in, and output formatting. It does not yet execute deep second-by-second marketing analysis, automated competitor research, or a full studio interface. The repository does include stock-source adapters and direct clip search; these must be run outside the locked-down render profile, with commercial-safe metadata filtering enabled and every asset's source page checked. Do not describe the broader studio as complete.
+The cloud path now supports optional stock acquisition in a separate allowlisted profile and mixed-media timelines in the render job. The checked-in request remains a synthetic test fixture; Claude Code must create a real per-video request with the uploaded tmp0 file ID, an original timeline, captions, and optional `asset_queries`. The cloud runner performs deterministic technical validation and provenance reporting. It does not itself run an LLM for second-by-second creative interpretation or discover competitor ads. Those intelligence stages must be performed by Claude Code using an available public read-only web research capability before it writes the request; if that capability is unavailable, it must label competitor research as not performed rather than inventing evidence. A full graphical studio interface and fully automated visual-semantic QC/repair loop are not yet implemented.
+
+## Autonomous reference-video request fields
+
+Claude Code should prepare the request after inspecting the uploaded reference. In addition to the required `project_id`, `file_id`, and `output_profile`, the request may include:
+
+- `asset_queries`: up to 12 short, shot-specific search queries. Each entry is an object with `query` and optional `slot_id`. The cloud acquisition step uses no-key sources from the allowlist (`archive_org`, `loc`, `noaa`, `wikimedia`) and rejects ambiguous, NC, ND, caveated, or missing licence metadata.
+- `timeline`: 1–100 ordered segments. A reference segment is `{"source":"reference","in_seconds":0,"out_seconds":5}`. A stock segment is `{"asset_id":"<asset_id from stock-assets manifest>","in_seconds":0,"out_seconds":4}`. Only acquired manifest asset IDs are accepted; arbitrary file paths and remote URLs are rejected.
+- `subtitles_srt`: optional original captions prepared by the agent. Do not put secrets or private personal information in the public request JSON.
+
+Stock clips are downloaded into the ephemeral runner and are not uploaded as GitHub artifacts or committed. Their provenance and checksums are included in `render-report.json`.
 
 ## Trigger and retrieve the result
 
