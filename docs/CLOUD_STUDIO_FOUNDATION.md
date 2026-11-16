@@ -2,7 +2,7 @@
 
 Status: architecture proposal and implementation guardrails
 Target: private, cloud-hosted OpenMontage studio controlled from a phone
-Approval model: human approval at every creative production gate
+Approval model: autonomous creative/editing decisions inside the approved $0 scope; explicit approval for paid, publishing, or irreversible external actions
 Repository: this fork of OpenMontage; do not replace it with a second editor project
 
 ## 1. Existing system we are preserving
@@ -17,23 +17,22 @@ OpenMontage is already an agent-first production system. Claude Code is the prod
 
 Do not add a second agent orchestrator or replace the existing pipeline system.
 
-## 2. Non-negotiable approval contract
+## 2. Autonomy and approval contract
 
-The human is the producer. The system must stop at each creative gate and wait for an explicit response before advancing.
+For this user's reference-video workflow, Claude Code is the production director and should autonomously complete routine research, script, shot planning, edit decisions, rendering, and technical QA inside the approved zero-cost scope. Read `studio_profile.yaml` before starting and use the reference-analysis override in `skills/meta/video-reference-analyst.md`.
 
-Approval gates to preserve and verify across every enabled pipeline:
+Do not stop for approval at every creative stage or ask the user to select among routine variants. Record meaningful decisions in the append-only decision log and explain them in the delivery report.
 
-1. concept / proposal;
-2. script and narration direction;
-3. scene plan and visual direction;
-4. generated/source assets (before a draft render);
-5. edit decisions;
-6. final composition / QA result;
-7. publish/export action.
+Explicit user approval remains mandatory before:
+1. any paid service, paid API, GPU, storage, or runner overage;
+2. publishing or scheduling content to a public social account;
+3. changing account/security settings or adding a payment method;
+4. using media with unclear or restricted rights;
+5. irreversible deletion or an action outside the configured project scope.
 
-A prior approval never authorizes a later gate. Paid generation is disabled and out of scope. Any future change requires a separate explicit user decision before enabling a provider. Never silently change a provider, model family, render runtime, or creative direction. Keep the existing append-only decision log and checkpoint history.
+The $0 budget cap is hard. Paid generation is disabled and out of scope. Never silently change a provider, model family, or render runtime to a paid option. Keep the existing append-only decision log and checkpoint history.
 
-Important implementation note: the checkpoint protocol treats each pipeline manifest's `human_approval_default` as binding. Do not assume the global `checkpoint.policy` setting overrides a manifest. Before enabling cloud production, audit all pipeline manifests and add tests proving the gates above are enforced.
+Important implementation note: the checkpoint protocol treats each pipeline manifest's `human_approval_default` as binding. The reference-video override must be respected by the agent; do not assume a global checkpoint setting overrides pipeline manifests. Any pipeline invoked for this workflow must be configured or orchestrated so routine creative checkpoints do not contradict the user's autonomous-production instruction.
 
 ## 3. Cloud architecture (first release)
 
