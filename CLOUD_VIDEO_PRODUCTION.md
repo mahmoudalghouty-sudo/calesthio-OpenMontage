@@ -68,7 +68,7 @@ The cloud path now supports optional stock acquisition in a separate allowlisted
 Claude Code should prepare the request after inspecting the uploaded reference. In addition to the required `project_id`, `file_id`, and `output_profile`, the request may include:
 
 - `asset_queries`: up to 12 short, shot-specific search queries. Each entry is an object with `query` and optional `slot_id`. The cloud acquisition step uses no-key sources from the allowlist (`archive_org`, `loc`, `noaa`, `wikimedia`) and rejects ambiguous, NC, ND, caveated, or missing licence metadata.
-- `timeline`: 1–100 ordered segments. A reference segment is `{"source":"reference","in_seconds":0,"out_seconds":5}`. A stock segment is `{"asset_id":"<asset_id from stock-assets manifest>","in_seconds":0,"out_seconds":4}`. Only acquired manifest asset IDs are accepted; arbitrary file paths and remote URLs are rejected.
+- `timeline`: 1–100 ordered segments. A reference segment is `{"source":"reference","in_seconds":0,"out_seconds":5}`. A stock segment may refer to an acquired asset by ID (`{"asset_id":"<asset_id>","in_seconds":0,"out_seconds":4}`) or by its predeclared slot (`{"source":"stock","slot_id":"dog_grooming_broll","in_seconds":0,"out_seconds":4}`). Slot IDs are resolved against the stock manifest after acquisition. Only acquired manifest assets are accepted; arbitrary file paths and remote URLs are rejected.
 - `subtitles_srt`: optional original captions prepared by the agent. Do not put secrets or private personal information in the public request JSON.
 
 Stock clips are downloaded into the ephemeral runner and are not uploaded as GitHub artifacts or committed. Their provenance and checksums are included in `render-report.json`.
