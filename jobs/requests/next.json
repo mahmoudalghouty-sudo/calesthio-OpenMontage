@@ -1,7 +1,7 @@
 {
   "test_mode": "secret_e2ee",
   "project_id": "synthetic-cloud-proof",
-  "test_revision": 6,
+  "test_revision": 7,
   "output_profile": "instagram_reels",
   "cuts": [
     {
