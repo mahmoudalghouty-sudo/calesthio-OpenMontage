@@ -46,6 +46,50 @@ def probe(path: Path) -> dict:
     return json.loads(raw)
 
 
+def build_timeline(
+    raw_segments: list[dict],
+    reference_path: Path,
+    reference_duration: float,
+    stock_assets: dict[str, dict],
+) -> list[dict]:
+    """Resolve a mixed reference/stock timeline without accepting arbitrary paths."""
+    if not isinstance(raw_segments, list) or not raw_segments or len(raw_segments) > 100:
+        fail("timeline must contain 1-100 edit segments")
+    cuts = []
+    for index, item in enumerate(raw_segments):
+        if not isinstance(item, dict):
+            fail(f"timeline segment {index + 1} must be an object")
+        source_kind = str(item.get("source", "reference"))
+        if "asset_id" in item:
+            source_kind = "stock"
+        if source_kind == "reference":
+            segment_source = reference_path
+            media_duration = reference_duration
+        elif source_kind == "stock":
+            asset_id = str(item.get("asset_id", ""))
+            asset = stock_assets.get(asset_id)
+            if asset is None:
+                fail(f"timeline segment {index + 1} references unavailable stock asset: {asset_id}")
+            segment_source = Path(asset["path"]).resolve()
+            media_duration = float(asset["duration"])
+        else:
+            fail(f"timeline segment {index + 1} has unsupported source type: {source_kind}")
+        start = float(item.get("in_seconds", 0))
+        end = float(item.get("out_seconds", media_duration))
+        speed = float(item.get("speed", 1.0))
+        if start < 0 or end <= start or end > media_duration + 0.05:
+            fail(f"timeline segment {index + 1} is outside its source duration")
+        if speed < 0.5 or speed > 2.0:
+            fail(f"timeline segment {index + 1} speed must be between 0.5 and 2.0")
+        cuts.append({
+            "source": str(segment_source),
+            "in_seconds": start,
+            "out_seconds": min(end, media_duration),
+            "speed": speed,
+        })
+    return cuts
+
+
 def main() -> None:
     if not REQUEST_PATH.is_file():
         fail(f"request file missing: {REQUEST_PATH.relative_to(ROOT)}")
@@ -101,44 +145,10 @@ def main() -> None:
 
     timeline = request.get("timeline")
     if timeline is not None:
-        if not isinstance(timeline, list) or not timeline or len(timeline) > 100:
-            fail("timeline must contain 1-100 edit segments")
         raw_segments = timeline
     else:
         raw_segments = request.get("cuts") or [{"in_seconds": 0, "out_seconds": duration, "source": "reference"}]
-
-    cuts = []
-    for index, item in enumerate(raw_segments):
-        if not isinstance(item, dict):
-            fail(f"timeline segment {index + 1} must be an object")
-        source_kind = str(item.get("source", "reference"))
-        if "asset_id" in item:
-            source_kind = "stock"
-        if source_kind == "reference":
-            segment_source = source
-            media_duration = duration
-        elif source_kind == "stock":
-            asset_id = str(item.get("asset_id", ""))
-            asset = stock_assets.get(asset_id)
-            if asset is None:
-                fail(f"timeline segment {index + 1} references unavailable stock asset: {asset_id}")
-            segment_source = asset["path"]
-            media_duration = asset["duration"]
-        else:
-            fail(f"timeline segment {index + 1} has unsupported source type: {source_kind}")
-        start = float(item.get("in_seconds", 0))
-        end = float(item.get("out_seconds", media_duration))
-        speed = float(item.get("speed", 1.0))
-        if start < 0 or end <= start or end > media_duration + 0.05:
-            fail(f"timeline segment {index + 1} is outside its source duration")
-        if speed < 0.5 or speed > 2.0:
-            fail(f"timeline segment {index + 1} speed must be between 0.5 and 2.0")
-        cuts.append({
-            "source": str(segment_source),
-            "in_seconds": start,
-            "out_seconds": min(end, media_duration),
-            "speed": speed,
-        })
+    cuts = build_timeline(raw_segments, source, duration, stock_assets)
 
     subtitle_path = None
     subtitle_text = request.get("subtitles_srt")
