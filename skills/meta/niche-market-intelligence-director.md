@@ -37,6 +37,14 @@ Treat the supplied video as a creative and market reference, not as footage to c
    - Do not reproduce a competitor's exact script, shot sequence, branding, distinctive characters, or protected footage. Do not remove watermarks or imitate a living creator's distinctive style.
    - If the supplied reference is the user's own footage, it may be edited as source media subject to the user's instructions.
 
+5a. **Prepare the cloud production request**
+   - After the reference analysis and original script are complete, create a shot-level `asset_queries` list only for shots that cannot be satisfied by the supplied reference footage.
+   - Use the separate `asset_acquisition` step; do not perform network acquisition in `editing_only`.
+   - Build a chronological `timeline` with segments that use either `source: "reference"` or an `asset_id` returned in the verified stock manifest. Never place a URL or arbitrary path in the timeline.
+   - Write original subtitle text to `subtitles_srt`. Do not put passwords, private notes, or personal details in the request file because it is committed to a public repository.
+   - Set `test_mode` to false only for a real, encrypted tmp0 upload after the user has completed the browser upload. Never replace the synthetic fixture with a real file ID until the source has been uploaded client-side encrypted.
+   - Commit only the request JSON and non-sensitive production instructions. Never commit source media, decrypted media, rendered media, passwords, API keys, or stock downloads.
+
 6. **Produce and quality-check**
    - Select an available zero-cost, permitted production path. Never call paid APIs, metered generation services, GPU services, or publishing integrations under the free editing profile.
    - If the required original visuals, voice, or assets cannot be created with available free local tools, disclose the limitation and produce the best honest edit from available assets. Never pretend a generated asset exists.
