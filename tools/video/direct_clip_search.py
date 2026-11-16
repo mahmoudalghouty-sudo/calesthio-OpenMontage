@@ -419,7 +419,7 @@ class DirectClipSearch(BaseTool):
                         if collected_for_query >= clips_per_query:
                             break
 
-                        if commercial_safe_only and not is_commercially_usable_license(cand.license):
+                        if commercial_safe_only and not is_commercially_usable_license(cand.license, creator=cand.creator, source_url=cand.source_url):
                             license_rejected += 1
                             continue
 
