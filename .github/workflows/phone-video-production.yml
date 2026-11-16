@@ -186,6 +186,14 @@ jobs:
           ffprobe -v error -show_entries stream=codec_name,width,height -show_entries format=duration \
             -of json "projects/${{ steps.request.outputs.project_id }}/renders/final.mp4"
 
+      - name: Run technical post-render QC
+        env:
+          PROJECT_ID: ${{ steps.request.outputs.project_id }}
+        run: |
+          python scripts/cloud_video_qc.py \
+            "projects/$PROJECT_ID/renders/final.mp4" \
+            --output "projects/$PROJECT_ID/artifacts/qc-report.json"
+
       - name: Encrypt and upload the finished video
         id: output
         run: |
