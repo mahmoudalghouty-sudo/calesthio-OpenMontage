@@ -43,7 +43,7 @@ def is_commercially_usable_license(
     if not raw:
         return False
 
-    value = re.sub(r"\\s+", " ", raw.lower()).strip()
+    value = re.sub(r"\s+", " ", raw.lower()).strip()
     if any(marker in value for marker in _RESTRICTED_MARKERS):
         return False
 
@@ -51,8 +51,8 @@ def is_commercially_usable_license(
         return bool(source_url.strip()) if source_url else True
 
     cc_by = bool(
-        re.search(r"\\bcc\\s*[- ]?by(?:\\s*[- ]?sa)?(?:\\b|/)", value)
-        or re.search(r"creativecommons\\.org/licenses/by(?:-sa)?/", value)
+        re.search(r"\bcc\s*[- ]?by(?:\s*[- ]?sa)?(?:\b|/)", value)
+        or re.search(r"creativecommons\.org/licenses/by(?:-sa)?/", value)
         or "creative commons attribution" in value
     )
     if not cc_by:
