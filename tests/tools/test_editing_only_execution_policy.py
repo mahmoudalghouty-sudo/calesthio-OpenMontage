@@ -53,6 +53,16 @@ class RemoteVideoAnalysisTool(BaseTool):
         return ToolResult(success=True, data={"source": inputs["source"]})
 
 
+class AllowedStockAcquisitionTool(BaseTool):
+    name = "direct_clip_search"
+    tier = ToolTier.SOURCE
+    runtime = ToolRuntime.HYBRID
+    resource_profile = ResourceProfile(network_required=True)
+
+    def execute(self, inputs: dict) -> ToolResult:
+        return ToolResult(success=True, data={"acquired": True})
+
+
 class EditingOnlyExecutionPolicyTests(unittest.TestCase):
     def test_local_editing_tool_is_allowed(self) -> None:
         with patch.dict(os.environ, {"OPENMONTAGE_PROFILE": "editing_only"}):
@@ -78,6 +88,18 @@ class EditingOnlyExecutionPolicyTests(unittest.TestCase):
             result = tool.execute({"source": "/workspace/input.mp4"})
 
         self.assertTrue(result.success)
+
+    def test_asset_acquisition_profile_allows_only_stock_search_tool(self) -> None:
+        with patch.dict(os.environ, {"OPENMONTAGE_PROFILE": "asset_acquisition"}):
+            result = AllowedStockAcquisitionTool().execute({})
+            self.assertTrue(result.success)
+            with self.assertRaisesRegex(PermissionError, "asset_acquisition"):
+                NetworkAnalysisTool().execute({})
+
+    def test_asset_acquisition_profile_rejects_paid_generation(self) -> None:
+        with patch.dict(os.environ, {"OPENMONTAGE_PROFILE": "asset_acquisition"}):
+            with self.assertRaisesRegex(PermissionError, "asset_acquisition"):
+                PaidGenerationTool().execute({})
 
     def test_profile_is_opt_in_for_existing_workflows(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
