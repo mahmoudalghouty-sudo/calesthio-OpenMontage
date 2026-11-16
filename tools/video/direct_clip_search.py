@@ -64,6 +64,29 @@ ASSET_ACQUISITION_ALLOWED_SOURCES = frozenset({
     "wikimedia",
 })
 
+ASSET_SOURCE_HOSTS = {
+    "archive_org": ("archive.org",),
+    "loc": ("loc.gov",),
+    "noaa": ("noaa.gov",),
+    "wikimedia": ("wikimedia.org",),
+}
+
+
+def is_allowed_asset_url(source_name: str, url: str) -> bool:
+    """Reject non-HTTPS and off-provider URLs before stock downloads."""
+    allowed = ASSET_SOURCE_HOSTS.get(source_name, ())
+    try:
+        parsed = urllib.parse.urlparse(str(url))
+        host = (parsed.hostname or "").lower().rstrip(".")
+        port = parsed.port
+    except ValueError:
+        return False
+    if parsed.scheme != "https" or not host or parsed.username or parsed.password:
+        return False
+    if port not in (None, 443):
+        return False
+    return any(host == domain or host.endswith("." + domain) for domain in allowed)
+
 
 class _DeadlineExceeded(TimeoutError):
     """Raised when the direct-clip-search wall-clock deadline is exhausted."""
@@ -348,6 +371,7 @@ class DirectClipSearch(BaseTool):
             errors: list[dict] = []
             skipped = 0
             license_rejected = 0
+            host_rejected = 0
             per_source_counts: dict[str, int] = {s.name: 0 for s in sources}
             queries_started = 0
 
@@ -441,6 +465,11 @@ class DirectClipSearch(BaseTool):
 
                         if collected_for_query >= clips_per_query:
                             break
+
+                        if os.environ.get("OPENMONTAGE_PROFILE", "").strip().lower() == "asset_acquisition":
+                            if not is_allowed_asset_url(cand.source, cand.source_url) or not is_allowed_asset_url(cand.source, cand.download_url):
+                                host_rejected += 1
+                                continue
 
                         if commercial_safe_only and not is_commercially_usable_license(cand.license, creator=cand.creator, source_url=cand.source_url):
                             license_rejected += 1
@@ -570,6 +599,7 @@ class DirectClipSearch(BaseTool):
                     "clips_reused": skipped,
                     "total_clips": len(downloaded),
                     "license_rejected": license_rejected,
+                    "host_rejected": host_rejected,
                     "commercial_safe_only": commercial_safe_only,
                     "per_source_counts": per_source_counts,
                     "queries_run": queries_started,
