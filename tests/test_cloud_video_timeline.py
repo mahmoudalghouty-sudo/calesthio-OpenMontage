@@ -35,6 +35,20 @@ def test_build_timeline_accepts_only_manifest_stock_ids(tmp_path):
     assert cuts[0]["out_seconds"] == 3.0
 
 
+def test_build_timeline_resolves_stock_by_slot_id(tmp_path):
+    clip = tmp_path / "stock" / "dog-grooming.mp4"
+    clip.parent.mkdir()
+    clip.write_bytes(b"stock")
+    cuts = build_timeline(
+        [{"source": "stock", "slot_id": "dog_grooming_broll", "in_seconds": 0, "out_seconds": 2}],
+        tmp_path / "reference.mp4",
+        10,
+        {"slot:dog_grooming_broll": {"path": clip, "duration": 4}},
+    )
+    assert cuts[0]["source"] == str(clip)
+    assert cuts[0]["out_seconds"] == 2.0
+
+
 def test_build_timeline_rejects_missing_stock_asset():
     with pytest.raises(SystemExit, match="unavailable stock asset"):
         build_timeline(
