@@ -40,8 +40,8 @@ jobs:
           test_mode = data.get("test_mode", False)
           if test_mode is True:
               test_mode = "local"
-          if test_mode not in (False, "e2ee_input", "local"):
-              raise SystemExit("test_mode must be false, local, or e2ee_input")
+          if test_mode not in (False, "e2ee_input", "secret_e2ee", "local"):
+              raise SystemExit("test_mode must be false, local, e2ee_input, or secret_e2ee")
           test_mode = "false" if test_mode is False else test_mode
           project_id = str(data.get("project_id", "phone-video"))
           if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,47}", project_id):
@@ -110,14 +110,19 @@ jobs:
           set -euo pipefail
           PASS="$TMP0_E2EE_PASSWORD"
           mkdir -p "projects/$PROJECT_ID/assets"
-          if [ "$TEST_MODE" = "local" ] || [ "$TEST_MODE" = "e2ee_input" ]; then
-            PASS="$(openssl rand -hex 32)"
+          if [ "$TEST_MODE" = "local" ] || [ "$TEST_MODE" = "e2ee_input" ] || [ "$TEST_MODE" = "secret_e2ee" ]; then
+            if [ "$TEST_MODE" != "secret_e2ee" ]; then
+              PASS="$(openssl rand -hex 32)"
+            elif [ -z "$PASS" ]; then
+              echo "::error::TMP0_E2EE_PASSWORD secret is missing; add it in repository Actions secrets."
+              exit 1
+            fi
             ffmpeg -hide_banner -loglevel error -y \
               -f lavfi -i "testsrc2=size=640x360:rate=24:duration=5" \
               -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=5" \
               -shortest -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
               -c:a aac transfer-client/synthetic-source.mp4
-            if [ "$TEST_MODE" = "e2ee_input" ]; then
+            if [ "$TEST_MODE" = "e2ee_input" ] || [ "$TEST_MODE" = "secret_e2ee" ]; then
               timeout 300s node transfer-client/tmp0.js upload transfer-client/synthetic-source.mp4 --encrypt --password "$PASS" \
                 --expires 1h --max-downloads 3 --json > transfer-client/input-upload.json
               INPUT_FILE_ID="$(node -e "const x=JSON.parse(require('fs').readFileSync('transfer-client/input-upload.json','utf8')); if(!x.fileId) throw new Error('Missing synthetic input file ID'); process.stdout.write(x.fileId)")"
@@ -132,6 +137,9 @@ jobs:
               cp transfer-client/synthetic-source.mp4 "projects/$PROJECT_ID/assets/source.mp4"
             fi
             echo "Synthetic source prepared; mode=$TEST_MODE."
+            if [ "$TEST_MODE" = "secret_e2ee" ]; then
+              echo "PASS: synthetic source upload/download used the configured repository secret."
+            fi
           else
             if [ -z "$PASS" ]; then
               echo "::error::Add TMP0_E2EE_PASSWORD in repository Settings > Secrets and variables > Actions."
