@@ -1,7 +1,7 @@
 {
   "test_mode": "secret_e2ee",
   "project_id": "synthetic-cloud-proof",
-  "test_revision": 5,
+  "test_revision": 6,
   "output_profile": "instagram_reels",
   "cuts": [
     {
@@ -13,5 +13,6 @@
       "out_seconds": 5
     }
   ],
-  "subtitles_srt": "1\n00:00:00,000 --> 00:00:02,000\nSynthetic hook test\n\n2\n00:00:02,000 --> 00:00:04,500\nSubtitle burn verification\n"
+  "subtitles_srt": "1\n00:00:00,000 --> 00:00:02,000\nSynthetic hook test\n\n2\n00:00:02,000 --> 00:00:04,500\nSubtitle burn verification\n",
+  "asset_queries": []
 }
