@@ -11,7 +11,9 @@ import re
 _RESTRICTED_MARKERS = (
     "noncommercial",
     "non-commercial",
-    "no derivatives",\n    "no known copyright restrictions",\n    "no known rights",
+    "no derivatives",
+    "no known copyright restrictions",
+    "no known rights",
     "no-derivatives",
     "cc by-nc",
     "cc-by-nc",
