@@ -40,6 +40,8 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Optional
 
+from tools.video.stock_sources.license_policy import is_commercially_usable_license
+
 from tools.base_tool import (
     BaseTool,
     Determinism,
@@ -170,6 +172,16 @@ class DirectClipSearch(BaseTool):
                     "min_width": {"type": "integer"},
                 },
             },
+            "commercial_safe_only": {
+                "type": "boolean",
+                "default": True,
+                "description": (
+                    "Reject stock results unless their metadata explicitly identifies "
+                    "public-domain, CC0, CC BY, or CC BY-SA rights. Ambiguous, NC, ND, "
+                    "and caveated rights are excluded. This is a conservative metadata "
+                    "screen, not a substitute for checking the source item's terms."
+                ),
+            },
             "extract_thumbnails": {
                 "type": "boolean",
                 "default": True,
@@ -260,6 +272,7 @@ class DirectClipSearch(BaseTool):
             clips_per_query = int(inputs.get("clips_per_query", 3))
             extract_thumbs = bool(inputs.get("extract_thumbnails", True))
             skip_existing = bool(inputs.get("skip_existing", True))
+            commercial_safe_only = bool(inputs.get("commercial_safe_only", True))
             timeout_seconds = float(inputs.get("timeout_seconds", 600))
             deadline = start + timeout_seconds
 
@@ -311,6 +324,7 @@ class DirectClipSearch(BaseTool):
             downloaded: list[dict] = []
             errors: list[dict] = []
             skipped = 0
+            license_rejected = 0
             per_source_counts: dict[str, int] = {s.name: 0 for s in sources}
             queries_started = 0
 
@@ -404,6 +418,10 @@ class DirectClipSearch(BaseTool):
 
                         if collected_for_query >= clips_per_query:
                             break
+
+                        if commercial_safe_only and not is_commercially_usable_license(cand.license):
+                            license_rejected += 1
+                            continue
 
                         clip_id = cand.clip_id
                         ext = _guess_ext(cand)
@@ -528,6 +546,8 @@ class DirectClipSearch(BaseTool):
                     "clips_downloaded": len([d for d in downloaded if not d.get("skipped_existing")]),
                     "clips_reused": skipped,
                     "total_clips": len(downloaded),
+                    "license_rejected": license_rejected,
+                    "commercial_safe_only": commercial_safe_only,
                     "per_source_counts": per_source_counts,
                     "queries_run": queries_started,
                     "resolved_sources": [s.name for s in sources],
