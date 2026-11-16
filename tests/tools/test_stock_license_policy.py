@@ -29,7 +29,7 @@ def test_explicit_commercial_licenses_are_accepted(license_text):
     [
         "",
         "Wikimedia Commons (verify per-file license)",
-        "Rights status varies — verify per item",
+        "Rights status varies — verify per item",\n        "No known copyright restrictions",
         "NASA Media Usage Guidelines (public domain with caveats)",
         "CC BY-NC 4.0",
         "CC BY-ND 4.0",
